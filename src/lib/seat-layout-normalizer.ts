@@ -18,8 +18,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function normalizeStatus(status: unknown): SeatStatus {
-  if (status === "AVAILABLE") return "AVAILABLE";
-  if (status === "BEST") return "BEST";
+  const normalized = typeof status === "string" ? status.toUpperCase() : "";
+  if (normalized === "AVAILABLE") return "AVAILABLE";
+  if (normalized === "BEST") return "BEST";
   return "OCCUPIED";
 }
 
@@ -79,7 +80,7 @@ function normalizeServiceLayout(data: RawServiceLayout, showId: string): SeatLay
 }
 
 function isSeatLayout(data: unknown): data is SeatLayout {
-  return isRecord(data) && Array.isArray(data.tiers);
+  return isRecord(data) && Array.isArray(data["tiers"]);
 }
 
 export function normalizeSeatLayout(data: unknown, showId: string): SeatLayout {
