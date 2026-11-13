@@ -1,0 +1,7 @@
+import type { ReactNode, FormEvent } from 'react';
+import { LoaderCircle } from 'lucide-react';
+import { Dialog,DialogContent,DialogTitle,DialogDescription } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+export function FormDialog({open,onOpenChange,title,description,submitting,children,onSubmit,submitLabel='Save'}: {open:boolean;onOpenChange:(open:boolean)=>void;title:string;description?:string;submitting?:boolean;children:ReactNode;onSubmit:(e:FormEvent<HTMLFormElement>)=>void;submitLabel?:string}) {
+ return <Dialog open={open} onOpenChange={v=>{if(!submitting)onOpenChange(v);}}><DialogContent className="max-h-[90dvh] w-[calc(100%-32px)] overflow-hidden p-0" onEscapeKeyDown={e=>{if(submitting)e.preventDefault();}} onInteractOutside={e=>{if(submitting)e.preventDefault();}}><form onSubmit={onSubmit} className="flex min-h-0 flex-col"><div className="border-b border-subtle p-6"><DialogTitle>{title}</DialogTitle><DialogDescription className={description ? 'mt-2' : 'sr-only'}>{description ?? title}</DialogDescription></div><div className="max-h-[60dvh] overflow-y-auto p-6">{children}</div><div className="sticky bottom-0 flex justify-end gap-2 border-t border-subtle bg-surface p-4"><Button type="button" variant="outline" disabled={submitting} onClick={()=>onOpenChange(false)}>Cancel</Button><Button type="submit" disabled={submitting}>{submitting && <LoaderCircle className="size-4 animate-spin"/>}{submitLabel}</Button></div></form></DialogContent></Dialog>;
+}

@@ -1,0 +1,15 @@
+# Home page
+- [ ] Build cities CRUD and bulk entry, theatre CRUD/detail, screen builder and deletion; validate rules and browser flows.
+- [x] Build admin foundation, shared controls, contracts, lazy routes, resource clients and cookie auth patch; tests verify roles, tables, uploads, OTP and permission handling. Browser fixtures verify all admin pages, login, refresh, mobile menu, logout and non-admin denial; live admin sign-in remains unverified.
+- [ ] Confirm admin resource endpoints and ShowSlot/ShowStatus values; blocked until backend contracts are supplied.
+- [x] Rebuild theme-only email OTP modal and cookie-only API authentication; tests and browser fixtures verify invalid/valid OTP, session restoration, sign-out, checkout continuation, Escape and small-screen sizes.
+- [ ] Verify live email OTP sign-in; blocked until the API allows credentialed requests from the preview and confirms the logout endpoint.
+- [x] Build live showtimes page with seven-day selection, URL filters, theatre cards and seat links; verified live empty state, filter toggle and desktop/mobile layout. Populated theatre/seat navigation checked with controlled browser fixtures only.
+- [x] Build theme-only full-viewport seat selection, ten-seat limit, saved booking intent and guest login continuation; tests cover limit, restore, occupied rejection and guest/authenticated continuation. Browser fixtures verify two-axis scrolling and unchanged page dimensions. Existing auth UI retained; checkout remains a placeholder.
+- [ ] Verify populated live seat/show flow; blocked until the service provides an existing show and its seat response.
+- [x] Build live movie details with theme-only hero, reusable media scroller, trailer modal and poster lightbox; verified real movie 4, modal open/close, ticket link and mobile layout; twelve tests passed. Cast data is absent in the live response.
+- [x] Connect live movie data and map backend fields; nine tests pass and initial page shows six real movies with loaded posters.
+- [ ] Backend owner must allow the preview origin through CORS; direct browser requests currently fail, although the initial server-loaded page works.
+- [x] Build sticky header, search and account menu.
+- [x] Build poster carousel, reusable movie cards and filtered movie grids.
+- [x] Verify navigation, filtering, empty state, timed carousel and desktop/mobile layouts; loading/error states implemented, five tests passed.
