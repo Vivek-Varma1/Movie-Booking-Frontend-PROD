@@ -49,7 +49,7 @@ const real = {
   getShows: (movieId: string, date: string) =>
     http.get<MovieDateShowsResponse>(`/movies/${movieId}/shows`, { params: { cityId: appConfig.defaultCityId, showDate: date } }).then((r) => toTheatreShows(r.data, movieId)),
   getSeatLayout: (showId: string) => http.get<unknown>(`/shows/${showId}/seats`).then((r) => toSeatLayout(r.data, showId)),
-  sendOtp: (email: string) => http.post<{ success: boolean }>("/auth/otp", { email }).then((r) => r.data),
+  sendOtp: (email: string) => http.post<{ success: boolean }>("/auth/send-otp", { email }).then((r) => r.data),
   verifyOtp: async (email: string, otp: string): Promise<AuthResponse> => {
     const { data } = await http.post<AuthResponse>("/auth/verify-otp", { email, otp });
     // Never retain the response token: the backend owns the HttpOnly cookie.
