@@ -6,6 +6,6 @@ export function toggleSeatSelection(selected: string[], id: string): { selected:
   return { selected: [...selected, id], limitReached: false };
 }
 export function restoreSeatSelection(layout: SeatLayout, ids: string[]): string[] {
-  const allowed = new Set(layout.tiers.flatMap((tier) => tier.rows.flatMap((row) => row.cells.filter((seat) => seat && seat.status !== "OCCUPIED").map((seat) => seat?.id))));
+  const allowed = new Set(layout.tiers.flatMap((tier) => tier.rows.flatMap((row) => row.cells.flatMap((seat) => seat?.status === "AVAILABLE" ? [seat.id] : []))));
   return [...new Set(ids)].filter((id) => allowed.has(id)).slice(0, MAX_SELECTED_SEATS);
 }

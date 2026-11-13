@@ -44,7 +44,7 @@ export interface Show {
 export interface TheatreShows { theatre: Theatre; shows: Show[] }
 
 export type SeatStatus = "AVAILABLE" | "OCCUPIED" | "BEST";
-export interface SeatCell { id: string; label: string; number: number; status: SeatStatus }
+export interface SeatCell { id: string; label: string; number: number; status: SeatStatus; seatId?: string; showSeatId?: string }
 export interface SeatRow { label: string; cells: (SeatCell | null)[] }
 export interface SeatTier { name: string; price: number; rows: SeatRow[] }
 export interface SeatLayout { showId: string; tiers: SeatTier[] }

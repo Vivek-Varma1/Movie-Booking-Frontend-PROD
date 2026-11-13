@@ -77,7 +77,8 @@ export function SeatBooking({ layout, movie, show, siblingShows }: { layout: Sea
             const seat = row.cells[column];
             if (!seat) return <span key={column} className="size-8 shrink-0" aria-hidden="true" />;
             const active = selected.includes(seat.id);
-            return <Button key={column} variant="ghost" disabled={seat.status === "OCCUPIED"} aria-pressed={active} aria-label={`Row ${row.label} seat ${seat.number}, ₹${tier.price}, ${active ? "selected" : seat.status.toLowerCase()}`} title={`${row.label}${seat.number} · ₹${tier.price}`} className={cn(seatBase, active ? "border border-seat-selected bg-seat-selected text-on-primary hover:bg-seat-selected hover:text-on-primary" : seatStatus[seat.status])} onClick={() => toggle(seat.id)}>{seat.status === "OCCUPIED" ? <span aria-hidden="true" className="text-base">×</span> : seat.number}{active && popping.includes(seat.id) && movie?.posterUrl && <img src={movie.posterUrl} alt="" className="seat-pop absolute inset-0 size-full object-cover" />}</Button>;
+            const selectable = seat.status === "AVAILABLE";
+            return <Button key={column} variant="ghost" disabled={!selectable} aria-pressed={active} aria-label={`Row ${row.label} seat ${seat.number}, ₹${tier.price}, ${active ? "selected" : seat.status.toLowerCase()}`} title={`${row.label}${seat.number} · ₹${tier.price}`} className={cn(seatBase, active ? "border border-seat-selected bg-seat-selected text-on-primary hover:bg-seat-selected hover:text-on-primary" : seatStatus[seat.status])} onClick={() => toggle(seat.id)}>{selectable ? seat.number : <span aria-hidden="true" className="text-base">×</span>}{active && popping.includes(seat.id) && movie?.posterUrl && <img src={movie.posterUrl} alt="" className="seat-pop absolute inset-0 size-full object-cover" />}</Button>;
           })}</div>)}</div>
         </section>)}
         <div className="cinema-screen" role="img" aria-label="Cinema screen" />

@@ -12,8 +12,8 @@ describe("seat selection rules", () => {
   it("toggles an already selected seat off", () => {
     expect(toggleSeatSelection(["A1", "A2"], "A1").selected).toEqual(["A2"]);
   });
-  it("restores only existing selectable seats and never occupied seats", () => {
+  it("restores only existing available seats", () => {
     const layout: SeatLayout = { showId: "1", tiers: [{ name: "Executive", price: 150, rows: [{ label: "A", cells: [{ id: "1", label: "A", number: 1, status: "AVAILABLE" }, null, { id: "2", label: "A", number: 2, status: "OCCUPIED" }, { id: "3", label: "A", number: 3, status: "BEST" }] }] }] };
-    expect(restoreSeatSelection(layout, ["1", "2", "3", "missing", "1"])).toEqual(["1", "3"]);
+    expect(restoreSeatSelection(layout, ["1", "2", "3", "missing", "1"])).toEqual(["1"]);
   });
 });

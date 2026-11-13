@@ -1,8 +1,8 @@
+import { normalizeSeatLayout } from "@/lib/seat-layout-normalizer";
 import type { SeatLayout, SeatTier } from "@/types";
 
-/** Until a populated service response is supplied, accept only the specified tier/row contract, never substitute demo seats. */
 export function toSeatLayout(data: unknown, showId: string): SeatLayout {
-  if (!data || typeof data !== "object" || !("tiers" in data) || !Array.isArray(data.tiers)) throw new Error("The service seat layout format is not supported yet.");
+  if (!data || typeof data !== "object" || !("tiers" in data) || !Array.isArray(data.tiers)) return normalizeSeatLayout(data, showId);
   for (const tier of data.tiers) {
     if (!tier || typeof tier.name !== "string" || typeof tier.price !== "number" || !Array.isArray(tier.rows)) throw new Error("The seat tier is missing its price or rows.");
     for (const row of tier.rows) {
