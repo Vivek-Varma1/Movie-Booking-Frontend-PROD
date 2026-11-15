@@ -8,14 +8,16 @@ import { appConfig } from "@/theme/theme";
 import type { Movie, Show } from "@/types";
 
 export const Route = createFileRoute("/shows/$showId/seats")({
-  loader: async ({ context, params }) => {
+  validateSearch: (search: { cityId?: unknown }) => ({ cityId: typeof search.cityId === "string" ? search.cityId : "" }),
+  loaderDeps: ({ search }) => ({ cityId: search.cityId }),
+  loader: async ({ context, params, deps }) => {
     const [layout, show] = await Promise.all([context.queryClient.ensureQueryData(seatLayoutQuery(params.showId)), context.queryClient.ensureQueryData(showQuery(params.showId))]);
     let movie: Movie | undefined;
     let siblingShows: Show[] = [];
     if (show.movieId !== undefined) {
       movie = await context.queryClient.ensureQueryData(movieQuery(String(show.movieId)));
       if (show.startTime && show.theatreId !== undefined) {
-        const groups = await context.queryClient.ensureQueryData(showsQuery(String(show.movieId), show.startTime.slice(0, 10)));
+        const groups = deps.cityId ? await context.queryClient.ensureQueryData(showsQuery(String(show.movieId), show.startTime.slice(0, 10), deps.cityId)) : [];
         siblingShows = groups.find((group) => group.theatre.id === String(show.theatreId))?.shows ?? [];
       }
     }
@@ -36,9 +38,10 @@ export const Route = createFileRoute("/shows/$showId/seats")({
 function SeatsPage() {
   const { showId } = Route.useParams();
   const initial = Route.useLoaderData();
+  const { cityId } = Route.useSearch();
   const { data: layout } = useSuspenseQuery({ ...seatLayoutQuery(showId), initialData: initial.layout, staleTime: 30_000 });
   const { data: show } = useSuspenseQuery({ ...showQuery(showId), initialData: initial.show, staleTime: 60_000 });
-  return <SeatBooking key={showId} layout={layout} show={show} {...("movie" in initial && initial.movie ? { movie: initial.movie } : {})} siblingShows={initial.siblingShows} />;
+  return <SeatBooking key={showId} layout={layout} show={show} cityId={cityId} {...("movie" in initial && initial.movie ? { movie: initial.movie } : {})} siblingShows={initial.siblingShows} />;
 }
 function SeatsSkeleton() {
   return <div className="seat-viewport" aria-busy="true" aria-label="Loading seats"><SeatHeader /><div className="h-20 shrink-0 border-b border-subtle" /><div className="seat-canvas animate-pulse"><div className="mx-auto w-max py-8">{Array.from({ length: 12 }, (_, row) => <div key={row} className="mb-2 flex gap-2">{Array.from({ length: 18 }, (_, column) => <span key={column} className="size-8 rounded-seat bg-page-muted" />)}</div>)}</div></div><div className="h-header shrink-0 border-t border-subtle" /></div>;

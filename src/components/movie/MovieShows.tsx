@@ -5,19 +5,18 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { TheatreShowCard } from "./TheatreShowCard";
 import { cn } from "@/lib/utils";
-import { filterTheatreShows, nextSevenDates, SHOW_TIME_ZONE } from "@/lib/show-filters";
+import { filterTheatreShows, SHOW_TIME_ZONE } from "@/lib/show-filters";
 import type { Movie, TheatreShows } from "@/types";
 
 export interface ShowFilters { afterFive: boolean; availableOnly: boolean; favouritesOnly: boolean }
-interface Props { movie: Movie; groups: TheatreShows[]; today: string; date: string; initialNow: string; filters: ShowFilters; onDate: (date: string) => void; onFilters: (filters: ShowFilters) => void }
+interface Props { movie: Movie; groups: TheatreShows[]; dates: string[]; cityId: string; today: string; date: string; initialNow: string; filters: ShowFilters; onDate: (date: string) => void; onFilters: (filters: ShowFilters) => void }
 const weekdayFormat = new Intl.DateTimeFormat("en-US", { timeZone: SHOW_TIME_ZONE, weekday: "short" });
 const monthFormat = new Intl.DateTimeFormat("en-US", { timeZone: SHOW_TIME_ZONE, month: "short" });
 
-export function MovieShows({ movie, groups, today, date, initialNow, filters, onDate, onFilters }: Props) {
+export function MovieShows({ movie, groups, dates, cityId, today, date, initialNow, filters, onDate, onFilters }: Props) {
   const [now, setNow] = useState(new Date(initialNow));
   const [favourites, setFavourites] = useState<string[]>([]);
   useEffect(() => { setNow(new Date()); const timer = setInterval(() => setNow(new Date()), 30_000); return () => clearInterval(timer); }, []);
-  const dates = nextSevenDates(today);
   const filtered = filterTheatreShows(groups, filters, favourites);
   const year = movie.releaseDate?.slice(0, 4);
   const hours = Math.floor(movie.durationMins / 60);
@@ -50,7 +49,7 @@ export function MovieShows({ movie, groups, today, date, initialNow, filters, on
     <section className="min-h-[55vh] bg-page-muted py-5">
       <div className="shows-container">
         <div className="mb-4 flex flex-wrap items-center justify-center gap-x-7 gap-y-3 rounded-card bg-surface px-4 py-4 text-xs font-semibold max-sm:gap-x-4" aria-label="Show availability legend">{[{ label: "Available", color: "text-status-available", dot: "bg-status-available" }, { label: "Filling fast", color: "text-status-filling", dot: "bg-status-filling" }, { label: "Almost full", color: "text-status-almost-full", dot: "bg-status-almost-full" }].map((status) => <span key={status.label} className={cn("flex items-center gap-2", status.color)}><span className={cn("size-1.5 rounded-full", status.dot)} />{status.label}</span>)}</div>
-        <div className="space-y-3">{filtered.map((group) => <TheatreShowCard key={group.theatre.id} group={group} date={date} now={now} favourite={favourites.includes(group.theatre.id)} onFavourite={() => setFavourites((prev) => prev.includes(group.theatre.id) ? prev.filter((id) => id !== group.theatre.id) : [...prev, group.theatre.id])} />)}</div>
+        <div className="space-y-3">{filtered.map((group) => <TheatreShowCard key={group.theatre.id} group={group} cityId={cityId} date={date} now={now} favourite={favourites.includes(group.theatre.id)} onFavourite={() => setFavourites((prev) => prev.includes(group.theatre.id) ? prev.filter((id) => id !== group.theatre.id) : [...prev, group.theatre.id])} />)}</div>
         {filtered.length === 0 && <div className="py-16 text-center" role="status"><CalendarDays className="mx-auto size-10 text-text-muted" /><h2 className="mt-5 text-lg font-bold">{groups.length ? "No shows match your filters" : "No shows for this date"}</h2><p className="mt-2 text-sm text-text-secondary">{groups.length ? "Try another time or theatre." : "Choose another date to see available showtimes."}</p>{groups.length > 0 && <Button variant="outline" className="mt-5 hover:bg-surface hover:text-text-primary" onClick={() => onFilters({ afterFive: false, availableOnly: false, favouritesOnly: false })}>Clear filters</Button>}</div>}
       </div>
     </section>

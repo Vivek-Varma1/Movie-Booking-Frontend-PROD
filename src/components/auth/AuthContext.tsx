@@ -31,7 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const href = useRouterState({ select: (state) => state.location.href });
   const previousPage = useRef("/");
-  useEffect(() => { if (!href.split("?")[0].startsWith("/checkout/")) previousPage.current = href; }, [href]);
+  useEffect(() => { if (!(href.split("?")[0] ?? "").startsWith("/checkout/")) previousPage.current = href; }, [href]);
   const afterLogin = useRef<(() => void) | null>(null);
   const currentUser = useRef<User | null>(null);
   currentUser.current = auth?.user ?? null;

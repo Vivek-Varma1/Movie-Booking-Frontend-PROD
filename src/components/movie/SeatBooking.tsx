@@ -38,7 +38,7 @@ export function SeatHeader({ movie, show }: { movie?: Movie; show?: ShowDetails 
   </header>;
 }
 
-export function SeatBooking({ layout, movie, show, siblingShows }: { layout: SeatLayout; movie?: Movie; show: ShowDetails; siblingShows: Show[] }) {
+export function SeatBooking({ layout, movie, show, siblingShows, cityId = "" }: { layout: SeatLayout; movie?: Movie; show: ShowDetails; siblingShows: Show[]; cityId?: string }) {
   const navigate = useNavigate();
   const { isAuthenticated, openAuthModal } = useAuth();
   const queryClient = useQueryClient();
@@ -84,7 +84,7 @@ export function SeatBooking({ layout, movie, show, siblingShows }: { layout: Sea
       const pendingKey = `pendingBooking:${layout.showId}`;
       const pending = sessionStorage.getItem(pendingKey);
       if (pending) { try { await cancelBooking(pending); } catch { /* An expired booking does not block a new attempt. */ } sessionStorage.removeItem(pendingKey); }
-      const selectedSeats = layout.tiers.flatMap((tier) => tier.rows.flatMap((row) => row.cells.filter((cell) => cell && selected.includes(cell.id)).map((cell) => {
+      const selectedSeats = layout.tiers.flatMap((tier) => tier.rows.flatMap((row) => row.cells.filter((cell): cell is NonNullable<typeof cell> => cell !== null && selected.includes(cell.id)).map((cell) => {
         const parsedId = Number(cell.showSeatId ?? cell.id);
         const mockId = Array.from(`${layout.showId}:${cell.id}`).reduce((hash, char) => (Math.imul(hash, 31) + char.charCodeAt(0)) >>> 0, 7) % 1_000_000_000;
         return { showSeatId: Number.isFinite(parsedId) ? parsedId : appConfig.useMock ? mockId + 1 : Number.NaN, seatLabel: row.label + cell.number, category: tier.name, price: tier.price };
@@ -95,8 +95,8 @@ export function SeatBooking({ layout, movie, show, siblingShows }: { layout: Sea
       setLockedUntil(lock.lockedUntil);
       // Persist the backend's exact response before the booking request can delay navigation.
       sessionStorage.setItem(`seatLock:${layout.showId}`, JSON.stringify({ lockedUntil: lock.lockedUntil }));
-      const booking = await createBooking(String(layout.showId), ids, { movieName: movie?.title ?? show.movieName, theatreName: show.theatreName, screenName: show.screenName, seats: selectedSeats });
-      sessionStorage.setItem(`checkout:${booking.bookingId}`, JSON.stringify({ showId: layout.showId, lockedUntil: lock.lockedUntil, seats: selectedSeats.map(({ seatLabel, category, price }) => ({ label: seatLabel, category, price })) }));
+      const booking = await createBooking(String(layout.showId), ids, { ...(movie?.title ?? show.movieName ? { movieName: movie?.title ?? show.movieName } : {}), ...(show.theatreName ? { theatreName: show.theatreName } : {}), ...(show.screenName ? { screenName: show.screenName } : {}), seats: selectedSeats });
+      sessionStorage.setItem(`checkout:${booking.bookingId}`, JSON.stringify({ showId: layout.showId, cityId, lockedUntil: lock.lockedUntil, seats: selectedSeats.map(({ seatLabel, category, price }) => ({ label: seatLabel, category, price })) }));
       sessionStorage.setItem(pendingKey, String(booking.bookingId));
       sessionStorage.removeItem(`seatLock:${layout.showId}`);
       await navigate({ to: "/checkout/$bookingId", params: { bookingId: String(booking.bookingId) } });
@@ -111,7 +111,7 @@ export function SeatBooking({ layout, movie, show, siblingShows }: { layout: Sea
     <SeatHeader {...(movie ? { movie } : {})} show={show} />
     <div className="mx-auto flex w-full max-w-[1024px] shrink-0 items-center gap-6 px-6 py-4 max-sm:gap-4 max-sm:px-4">
       {start && !Number.isNaN(start.getTime()) && <div className="shrink-0 text-sm"><p className="text-text-muted">{new Intl.DateTimeFormat("en-US", { timeZone: SHOW_TIME_ZONE, weekday: "short" }).format(start)}</p><p className="mt-1 font-semibold">{new Intl.DateTimeFormat("en-GB", { timeZone: SHOW_TIME_ZONE, day: "numeric", month: "short" }).format(start)}</p></div>}
-      <div className="media-scroller flex min-w-0 gap-3 overflow-x-auto" aria-label="Other showtimes">{(siblingShows.length ? siblingShows : start ? [{ id: layout.showId, startTime: start.toISOString() }] : []).map((sibling) => <Button key={sibling.id} variant="outline" className={cn("h-[52px] w-28 shrink-0 rounded-xl border-subtle text-base font-semibold shadow-none hover:bg-page-muted hover:text-text-primary", sibling.id === layout.showId && "border-primary bg-page-muted")} asChild><Link to="/shows/$showId/seats" params={{ showId: sibling.id }} aria-current={sibling.id === layout.showId ? "true" : undefined}>{timeFormat.format(new Date(sibling.startTime))}</Link></Button>)}</div>
+      <div className="media-scroller flex min-w-0 gap-3 overflow-x-auto" aria-label="Other showtimes">{(siblingShows.length ? siblingShows : start ? [{ id: layout.showId, startTime: start.toISOString() }] : []).map((sibling) => <Button key={sibling.id} variant="outline" className={cn("h-[52px] w-28 shrink-0 rounded-xl border-subtle text-base font-semibold shadow-none hover:bg-page-muted hover:text-text-primary", sibling.id === layout.showId && "border-primary bg-page-muted")} asChild><Link to="/shows/$showId/seats" params={{ showId: sibling.id }} search={{ cityId }} aria-current={sibling.id === layout.showId ? "true" : undefined}>{timeFormat.format(new Date(sibling.startTime))}</Link></Button>)}</div>
     </div>
     <div className="seat-canvas" aria-label="Seat map" tabIndex={0}>
       {maxColumns > 0 ? <div className="seat-block">

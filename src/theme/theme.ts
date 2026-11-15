@@ -4,9 +4,6 @@ const read = (key: string, fallback: string) => env[key] || fallback;
 
 export const appConfig = {
   appName: read("VITE_APP_NAME", "Cineverse"),
-  defaultCity: read("VITE_DEFAULT_CITY", "Srikakulam"),
-  defaultCityId: read("VITE_DEFAULT_CITY_ID", "1"),
-  defaultState: read("VITE_DEFAULT_STATE", "Andhra Pradesh"),
   fontFamily: read("VITE_FONT_FAMILY", "Figtree"),
   apiBaseUrl: read("VITE_API_BASE_URL", "https://movie-booking-service-rabbitmq.onrender.com/api"),
   useMock: read("VITE_USE_MOCK", "false") === "true",

@@ -10,7 +10,7 @@ import type { TheatreShows } from "@/types";
 const timeFormat = new Intl.DateTimeFormat("en-US", { timeZone: SHOW_TIME_ZONE, hour: "2-digit", minute: "2-digit", hour12: true });
 const statusClasses = { AVAILABLE: "text-primary", FILLING_FAST: "text-status-filling", ALMOST_FULL: "text-status-almost-full" };
 
-export function TheatreShowCard({ group, date, now, favourite, onFavourite }: { group: TheatreShows; date: string; now: Date; favourite: boolean; onFavourite: () => void }) {
+export function TheatreShowCard({ group, cityId, date, now, favourite, onFavourite }: { group: TheatreShows; cityId: string; date: string; now: Date; favourite: boolean; onFavourite: () => void }) {
   const { theatre, shows } = group;
   const [logoFailed, setLogoFailed] = useState(false);
   return <article className="grid gap-5 rounded-card bg-surface p-4 sm:grid-cols-[320px_minmax(0,1fr)] sm:gap-6">
@@ -35,7 +35,7 @@ export function TheatreShowCard({ group, date, now, favourite, onFavourite }: { 
         const label = timeFormat.format(new Date(show.startTime));
         const className = cn("h-11 w-[140px] rounded-lg border-subtle bg-surface text-base font-semibold shadow-none hover:bg-page-muted hover:text-text-primary max-sm:w-auto max-sm:flex-[0_0_calc((100%-24px)/3)]", show.availability ? statusClasses[show.availability] : "text-text-secondary", (past || soldOut) && "text-text-muted opacity-60");
         const title = past ? "Show already started" : soldOut ? "Sold out" : [show.screenName, show.availability?.replace(/_/g, " "), show.availableSeats === undefined ? undefined : `${show.availableSeats} seats available`].filter(Boolean).join(" · ");
-        return past || soldOut ? <Button key={show.id} variant="outline" disabled className={className} title={title} aria-label={`${label} — ${title}`}>{label}</Button> : <Button key={show.id} variant="outline" asChild className={className}><Link to="/shows/$showId/seats" params={{ showId: show.id }} title={title}>{label}</Link></Button>;
+        return past || soldOut ? <Button key={show.id} variant="outline" disabled className={className} title={title} aria-label={`${label} — ${title}`}>{label}</Button> : <Button key={show.id} variant="outline" asChild className={className}><Link to="/shows/$showId/seats" params={{ showId: show.id }} search={{ cityId }} title={title}>{label}</Link></Button>;
       })}
     </div>
   </article>;

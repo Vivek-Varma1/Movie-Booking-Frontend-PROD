@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Film, LogOut, MapPin, Search, Ticket, UserRound } from "lucide-react";
+import { Film, LogOut, Search, Ticket, UserRound } from "lucide-react";
 import { useState } from "react";
 import { appConfig } from "@/theme/theme";
 import { useAuth } from "@/components/auth/AuthContext";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { isAdmin } from "@/admin/lib/auth";
+import { CitySelector } from "@/components/city/CitySelector";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { isAuthenticated, user, openLogin, logout } = useAuth();
@@ -21,9 +22,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-page">
       <header className="sticky top-0 z-40 flex min-h-header items-center justify-between gap-5 border-b border-subtle bg-surface px-6 py-3 shadow-header max-sm:flex-wrap max-sm:gap-3 max-sm:px-4">
         <div className="flex shrink-0 items-center gap-6 max-lg:gap-4 max-sm:gap-3">
-          <Link to="/" className="flex items-center gap-2 text-2xl font-extrabold text-text-primary max-sm:text-xl"><span className="flex size-8 items-center justify-center rounded-lg bg-primary text-on-primary"><Film className="size-5" /></span>{appConfig.appName}</Link>
+          <Link to="/" aria-label={appConfig.appName} className="flex items-center gap-2 text-2xl font-extrabold text-text-primary max-sm:text-xl"><span className="flex size-8 items-center justify-center rounded-lg bg-primary text-on-primary"><Film className="size-5" /></span><span className="max-sm:hidden">{appConfig.appName}</span></Link>
           <span className="h-9 w-px bg-subtle max-sm:hidden" />
-          <div className="flex items-center gap-2 max-sm:hidden"><MapPin className="size-5 text-accent" /><div><p className="text-base font-bold leading-5">{appConfig.defaultCity}</p><p className="mt-0.5 text-xs text-text-secondary">{appConfig.defaultCity}, {appConfig.defaultState}</p></div></div>
+          <CitySelector />
           <nav aria-label="Main navigation"><Button variant="ghost" asChild className="h-10 rounded-full bg-nav-active px-4 font-semibold text-nav-active-text hover:bg-nav-active hover:text-nav-active-text"><Link to="/" aria-current="page">Movies</Link></Button></nav>
         </div>
         <div className="flex items-center gap-5 max-sm:contents">

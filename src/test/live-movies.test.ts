@@ -23,15 +23,21 @@ describe("deployed movie service", () => {
 
   it("sends the required cityId and normalizes the live list", async () => {
     get.mockResolvedValue({ data: [response] });
-    const movies = await getMovies();
-    expect(get).toHaveBeenCalledWith("/movies", { params: { cityId: "1" } });
+    const movies = await getMovies("2");
+    expect(get).toHaveBeenCalledWith("/movies", { params: { cityId: "2" } });
     expect(movies).toHaveLength(1);
     expect(movies[0]).toMatchObject({ id: "4", title: "Korean Kanakaraju", languages: ["Telugu"], durationMins: 145, posterUrl: response.posterUrl });
   });
 
   it("does not substitute mock data when the live API fails", async () => {
     get.mockRejectedValue(new Error("Network Error"));
-    await expect(getMovies()).rejects.toThrow("Network Error");
+    await expect(getMovies("1")).rejects.toThrow("Network Error");
+  });
+
+  it("searches movies within the selected city", async () => {
+    get.mockResolvedValue({ data: [response] });
+    await getMovies("9", "Korean");
+    expect(get).toHaveBeenCalledWith("/movies/search", { params: { query: "Korean", cityId: "9" } });
   });
 
   it("maps detail fields without fabricating missing summary fields", async () => {

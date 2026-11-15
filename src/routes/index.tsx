@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate, useRouter, type ErrorComponentProps, type SearchSchemaInput } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, RotateCcw, SlidersHorizontal, Film } from "lucide-react";
-import { appConfig } from "@/theme/theme";
 import { moviesQuery } from "@/hooks/queries";
 import { MovieCard } from "@/components/movie/MovieCard";
 import { HeroCarousel } from "@/components/movie/HeroCarousel";
@@ -9,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { filterMovies, weeklyReleases } from "@/lib/movie-filters";
+import { useCity } from "@/components/city/CityContext";
+import { appConfig } from "@/theme/theme";
 
 export const Route = createFileRoute("/")({
   validateSearch: (search: SearchSchemaInput & { q?: unknown; release?: unknown; language?: unknown; genre?: unknown }) => ({
@@ -17,7 +18,6 @@ export const Route = createFileRoute("/")({
     language: typeof search.language === "string" ? search.language : "",
     genre: typeof search.genre === "string" ? search.genre : "",
   }),
-  loader: async ({ context }) => { await context.queryClient.ensureQueryData(moviesQuery()); },
   pendingMs: 100,
   pendingComponent: HomeSkeleton,
   errorComponent: HomeError,
@@ -25,7 +25,7 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: `${appConfig.appName} — Book movie tickets` },
-      { name: "description", content: `Book movie tickets in ${appConfig.defaultCity} and nearby theatres.` },
+      { name: "description", content: "Book movie tickets, explore showtimes and choose your seats." },
       { property: "og:title", content: `${appConfig.appName} — Book movie tickets` },
       { property: "og:description", content: "Browse movies, pick showtimes and choose your seats." },
       { property: "og:type", content: "website" },
@@ -36,8 +36,10 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
-  const { data: movies } = useSuspenseQuery(moviesQuery());
+  const { selectedCity, loading: citiesLoading, error: citiesError, retry: retryCities } = useCity();
   const search = Route.useSearch();
+  const moviesResult = useQuery({ ...moviesQuery(selectedCity ? String(selectedCity.cityId) : "", search.q), enabled: !!selectedCity });
+  const movies = moviesResult.data ?? [];
   const navigate = useNavigate({ from: "/" });
   const update = (key: "release" | "language" | "genre", value: string) => navigate({ search: (prev) => ({ ...prev, [key]: value }), resetScroll: false });
   const today = new Date();
@@ -47,7 +49,12 @@ function HomePage() {
   const genres = [...new Set(movies.flatMap((m) => m.genres))];
   const hasFilters = !!(search.q || search.release || search.language || search.genre);
   const chip = "h-9 rounded-lg border-subtle bg-surface px-4 text-sm font-semibold text-text-secondary shadow-none hover:bg-page-muted hover:text-text-primary";
-  if (!movies.length) return <div className="home-container py-24 text-center"><Film className="mx-auto size-10 text-text-muted" /><h1 className="mt-5 text-2xl font-bold">No movies showing just yet</h1><p className="mt-2 text-text-secondary">Check back soon for the next big release.</p></div>;
+  if (citiesLoading) return <HomeSkeleton />;
+  if (citiesError) return <div role="alert" className="home-container py-24 text-center"><h1 className="text-2xl font-bold">Cities couldn’t load</h1><p className="mt-2 text-text-secondary">{citiesError}</p><Button className="mt-6" onClick={retryCities}><RotateCcw />Try again</Button></div>;
+  if (!selectedCity) return <div className="home-container py-24 text-center"><Film className="mx-auto size-10 text-text-muted" /><h1 className="mt-5 text-2xl font-bold">No cities available</h1><p className="mt-2 text-text-secondary">The service has not returned any cities yet.</p></div>;
+  if (moviesResult.isPending) return <HomeSkeleton />;
+  if (moviesResult.isError) return <div role="alert" className="home-container py-24 text-center"><h1 className="text-2xl font-bold">The movies couldn’t load</h1><p className="mt-2 text-text-secondary">Please try again in a moment.</p><Button className="mt-6" onClick={() => void moviesResult.refetch()}><RotateCcw />Try again</Button></div>;
+  if (!movies.length) return <div className="home-container py-24 text-center"><Film className="mx-auto size-10 text-text-muted" /><h1 className="mt-5 text-2xl font-bold">{search.q ? "No matching movies" : "No movies showing just yet"}</h1><p className="mt-2 text-text-secondary">{search.q ? "Try another title or choose another city." : "Check back soon for the next big release."}</p></div>;
   return <>
     <HeroCarousel movies={movies} />
     <div className="home-container pb-16">

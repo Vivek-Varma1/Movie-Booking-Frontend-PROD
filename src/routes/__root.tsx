@@ -16,6 +16,7 @@ import { appConfig, applyTheme, fontHref, themeCss } from "../theme/theme";
 import { AuthProvider } from "../components/auth/AuthContext";
 import { LoginModal } from "../components/auth/LoginModal";
 import { AppShell } from "../components/layout/AppShell";
+import { CityProvider } from "../components/city/CityContext";
 import { Toaster } from "../components/ui/sonner";
 
 function NotFoundComponent() {
@@ -128,11 +129,13 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <AuthProvider>
-        <AppShell>
-          <Outlet />
-        </AppShell>
-        <LoginModal />
-        <Toaster />
+        <CityProvider>
+          <AppShell>
+            <Outlet />
+          </AppShell>
+          <LoginModal />
+          <Toaster />
+        </CityProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
