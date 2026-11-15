@@ -17,6 +17,8 @@ export const appConfig = {
 /** env key -> [css variable, default] */
 const tokenDefs: Record<string, [string, string]> = {
   VITE_COLOR_SUCCESS: ["--color-success", "#1A9B5B"],
+  VITE_COLOR_NOTICE_BG: ["--color-notice-bg", "#F1E8FF"],
+  VITE_COLOR_CARD_FOOTER_BG: ["--color-card-footer-bg", "#F2F2F2"],
   VITE_COLOR_WARNING: ["--color-warning", "#C9A21A"],
   VITE_COLOR_INFO: ["--color-info", "#1F6FD6"],
   VITE_COLOR_CAT_REGULAR: ["--color-cat-regular", "#E8E8E8"],
@@ -68,6 +70,9 @@ const tokenDefs: Record<string, [string, string]> = {
   VITE_RADIUS_CARD: ["--radius-card", "16px"],
   VITE_RADIUS_BUTTON: ["--radius-button", "12px"],
   VITE_RADIUS_SEAT: ["--radius-seat", "6px"],
+  VITE_TICKET_CARD_WIDTH: ["--ticket-card-width", "560px"],
+  VITE_TICKET_QR_SIZE: ["--ticket-qr-size", "200px"],
+  VITE_TICKET_NOTCH_SIZE: ["--ticket-notch-size", "18px"],
   VITE_HEADER_HEIGHT: ["--header-height", "76px"],
 };
 

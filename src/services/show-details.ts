@@ -6,4 +6,7 @@ export interface ShowDetails {
   movieName?: string;
   theatreName?: string;
   startTime?: string;
+  endTime?: string;
+  durationInMinutes?: number;
+  screenName?: string;
 }

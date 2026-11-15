@@ -30,6 +30,10 @@ export async function createScreen(theatreId: number, input: CreateScreenRequest
   const row = {id: nextScreenId++, name: input.name, totalSeats: validation.total};
   rows=rows.map(t=>t.id===theatreId?{...t,screens:[...t.screens,row]}:t); return row;
 }
+export async function listScreens(theatreId: number): Promise<ScreenSummary[]> {
+  if (!appConfig.useMock) return (await http.get<ScreenSummary[]>(`/theatres/${theatreId}/screens`)).data;
+  return (await theatresApi.get(theatreId)).screens;
+}
 export async function deleteScreen(theatreId:number,screenId:number) {
   if (!appConfig.useMock) {await http.delete(`/theatres/${theatreId}/screens/${screenId}`);return;}
   rows=rows.map(t=>t.id===theatreId?{...t,screens:t.screens.filter(s=>s.id!==screenId)}:t);

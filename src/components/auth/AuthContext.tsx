@@ -18,6 +18,7 @@ interface AuthState {
   openAuthModal: (options?: { onSuccess?: () => void }) => void;
   returnToPreviousPage: () => void;
   closeLogin: () => void;
+  refreshUser: () => Promise<User | null>;
 }
 
 const Ctx = createContext<AuthState | null>(null);
@@ -30,7 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const href = useRouterState({ select: (state) => state.location.href });
   const previousPage = useRef("/");
-  useEffect(() => { if (href.split("?")[0] !== "/checkout") previousPage.current = href; }, [href]);
+  useEffect(() => { if (!href.split("?")[0].startsWith("/checkout/")) previousPage.current = href; }, [href]);
   const afterLogin = useRef<(() => void) | null>(null);
   const currentUser = useRef<User | null>(null);
   currentUser.current = auth?.user ?? null;
@@ -71,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       queryClient.clear();
       setAuth(null);
       if (router.state.location.pathname.startsWith("/admin")) void router.navigate({ to: "/", replace: true });
-      if (router.state.location.pathname === "/checkout") router.history.replace(previousPage.current);
+      if (router.state.location.pathname.startsWith("/checkout/")) router.history.replace(previousPage.current);
     } catch { toast.error("Couldn't sign out. Please try again."); }
   }, [queryClient, router]);
   const openAuthModal = useCallback((options?: { onSuccess?: () => void }) => {
@@ -79,6 +80,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoginOpen(true);
   }, []);
   const closeLogin = useCallback(() => { afterLogin.current = null; setLoginOpen(false); }, []);
+  const refreshUser = useCallback(async () => {
+    const user = await api.getCurrentUser();
+    setAuth(user ? { user } : null);
+    return user;
+  }, []);
   const returnToPreviousPage = useCallback(() => { router.history.replace(previousPage.current); }, [router]);
 
   const value = useMemo<AuthState>(
@@ -93,9 +99,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       openLogin: openAuthModal,
       openAuthModal,
       closeLogin,
+      refreshUser,
       returnToPreviousPage,
     }),
-    [auth, isReady, login, logout, loginOpen, openAuthModal, closeLogin, returnToPreviousPage],
+    [auth, isReady, login, logout, loginOpen, openAuthModal, closeLogin, refreshUser, returnToPreviousPage],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

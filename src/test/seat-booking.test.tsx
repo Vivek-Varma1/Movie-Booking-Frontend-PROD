@@ -1,15 +1,22 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { SeatLayout } from "@/types";
-const mocks = vi.hoisted(() => ({ navigate: vi.fn(), auth: vi.fn(), toast: vi.fn(), authenticated: false }));
+const mocks = vi.hoisted(() => ({ navigate: vi.fn(), auth: vi.fn(), toast: vi.fn(), authenticated: false, lockSeats: vi.fn(), createBooking: vi.fn(), cancelBooking: vi.fn() }));
 vi.mock("@tanstack/react-router", () => ({ Link: ({ children, to, params: _params, ...props }: any) => <a href={to} {...props}>{children}</a>, useNavigate: () => mocks.navigate }));
 vi.mock("@/components/auth/AuthContext", () => ({ useAuth: () => ({ isAuthenticated: mocks.authenticated, openAuthModal: mocks.auth, openLogin: vi.fn(), logout: vi.fn() }) }));
 vi.mock("sonner", () => ({ toast: mocks.toast }));
+vi.mock("@/services/shows", () => ({ lockSeats: mocks.lockSeats }));
+vi.mock("@/services/bookings", () => ({ createBooking: mocks.createBooking, cancelBooking: mocks.cancelBooking }));
+vi.mock("@/services/payments", () => ({ getErrorMessage: (error: Error) => error.message }));
 import { SeatBooking } from "@/components/movie/SeatBooking";
 const layout: SeatLayout = { showId: "12", tiers: [{ name: "Executive class", price: 150, rows: [{ label: "A", cells: [...Array.from({ length: 11 }, (_, i) => ({ id: String(i + 1), label: "A", number: i + 1, status: "AVAILABLE" as const })), null, { id: "occupied", label: "A", number: 12, status: "OCCUPIED" }] }] }] };
-const mount = () => render(<SeatBooking layout={layout} show={{ showId: "12", startTime: "2026-10-21T18:15:00", theatreName: "Theatre" }} siblingShows={[]} />);
+const mount = () => {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={client}><SeatBooking layout={layout} show={{ showId: "12", startTime: "2026-10-21T18:15:00", theatreName: "Theatre" }} siblingShows={[]} /></QueryClientProvider>);
+};
 describe("seat booking continuation", () => {
-  beforeEach(() => { sessionStorage.clear(); vi.clearAllMocks(); mocks.authenticated = false; });
+  beforeEach(() => { sessionStorage.clear(); vi.clearAllMocks(); mocks.authenticated = false; mocks.lockSeats.mockResolvedValue({ lockedSeatIds: [3], lockedUntil: new Date(Date.now() + 600_000).toISOString() }); mocks.createBooking.mockResolvedValue({ bookingId: 77, showId: "12" }); });
   afterEach(cleanup);
   it("saves guest seats and opens auth without leaving, then continues after success", async () => {
     mount();
@@ -19,7 +26,7 @@ describe("seat booking continuation", () => {
     expect(mocks.navigate).not.toHaveBeenCalled();
     expect(screen.getByRole("button", { name: "Row A seat 3, ₹150, selected" })).toHaveAttribute("aria-pressed", "true");
     mocks.auth.mock.calls[0]?.[0].onSuccess();
-    expect(mocks.navigate).toHaveBeenCalledWith({ to: "/checkout" });
+    await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith({ to: "/checkout/$bookingId", params: { bookingId: "77" } }));
   });
   it("restores same-show seats and sends authenticated users directly to checkout", async () => {
     sessionStorage.setItem("cv_booking_intent", JSON.stringify({ showId: "12", selectedSeatIds: ["3", "occupied"] }));
@@ -28,7 +35,7 @@ describe("seat booking continuation", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: "Row A seat 3, ₹150, selected" })).toHaveAttribute("aria-pressed", "true"));
     expect(screen.getByRole("button", { name: "Row A seat 12, ₹150, occupied" })).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "Proceed" }));
-    expect(mocks.navigate).toHaveBeenCalledWith({ to: "/checkout" });
+    await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith({ to: "/checkout/$bookingId", params: { bookingId: "77" } }));
     expect(mocks.auth).not.toHaveBeenCalled();
   });
   it("blocks the eleventh seat and shows the requested limit notice", () => {

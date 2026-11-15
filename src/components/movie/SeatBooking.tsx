@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Film, Info, UserRound } from "lucide-react";
+import { Film, Info, LoaderCircle, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -12,6 +12,12 @@ import { cn } from "@/lib/utils";
 import { appConfig } from "@/theme/theme";
 import type { Movie, SeatLayout, Show } from "@/types";
 import type { ShowDetails } from "@/services/show-details";
+import { createBooking, cancelBooking } from "@/services/bookings";
+import { getErrorMessage } from "@/services/payments";
+import { lockSeats } from "@/services/shows";
+import { useQueryClient } from "@tanstack/react-query";
+import { seatLayoutQuery } from "@/hooks/queries";
+import { formatCountdown, parseSeatLockDeadline } from "@/lib/seat-lock";
 
 const seatBase = "relative size-8 min-w-8 shrink-0 overflow-hidden rounded-seat p-0 text-[11px] font-semibold shadow-none [&_svg]:size-3";
 const seatStatus = {
@@ -35,12 +41,21 @@ export function SeatHeader({ movie, show }: { movie?: Movie; show?: ShowDetails 
 export function SeatBooking({ layout, movie, show, siblingShows }: { layout: SeatLayout; movie?: Movie; show: ShowDetails; siblingShows: Show[] }) {
   const navigate = useNavigate();
   const { isAuthenticated, openAuthModal } = useAuth();
+  const queryClient = useQueryClient();
   const { intent, ready, setIntent } = useBookingIntent();
   const [selected, setSelected] = useState<string[]>([]);
   const [popping, setPopping] = useState<string[]>([]);
   const restoredShow = useRef<string | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [lockedUntil, setLockedUntil] = useState<unknown>(undefined);
+  const [now, setNow] = useState(Date.now());
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  useEffect(() => {
+    if (lockedUntil === undefined) return;
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [lockedUntil]);
   useEffect(() => {
     if (!ready || restoredShow.current === layout.showId) return;
     restoredShow.current = layout.showId;
@@ -56,11 +71,39 @@ export function SeatBooking({ layout, movie, show, siblingShows }: { layout: Sea
       timers.current.push(setTimeout(() => setPopping((prev) => prev.filter((seat) => seat !== id)), 250));
     }
   };
-  const proceed = () => {
-    if (!selected.length) return;
+  const proceed = async () => {
+    if (!selected.length || submitting) return;
     setIntent({ showId: layout.showId, selectedSeatIds: selected });
-    const continueToCheckout = () => { void navigate({ to: "/checkout" }); };
+    const continueToCheckout = () => { void startBooking(); };
     if (isAuthenticated) continueToCheckout(); else openAuthModal({ onSuccess: continueToCheckout });
+  };
+  const startBooking = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const pendingKey = `pendingBooking:${layout.showId}`;
+      const pending = sessionStorage.getItem(pendingKey);
+      if (pending) { try { await cancelBooking(pending); } catch { /* An expired booking does not block a new attempt. */ } sessionStorage.removeItem(pendingKey); }
+      const selectedSeats = layout.tiers.flatMap((tier) => tier.rows.flatMap((row) => row.cells.filter((cell) => cell && selected.includes(cell.id)).map((cell) => {
+        const parsedId = Number(cell.showSeatId ?? cell.id);
+        const mockId = Array.from(`${layout.showId}:${cell.id}`).reduce((hash, char) => (Math.imul(hash, 31) + char.charCodeAt(0)) >>> 0, 7) % 1_000_000_000;
+        return { showSeatId: Number.isFinite(parsedId) ? parsedId : appConfig.useMock ? mockId + 1 : Number.NaN, seatLabel: row.label + cell.number, category: tier.name, price: tier.price };
+      })));
+      if (selectedSeats.some((seat) => !Number.isFinite(seat.showSeatId))) throw new Error("Seat information is invalid. Please refresh and try again.");
+      const ids = selectedSeats.map((seat) => seat.showSeatId);
+      const lock = await lockSeats(String(layout.showId), ids);
+      setLockedUntil(lock.lockedUntil);
+      // Persist the backend's exact response before the booking request can delay navigation.
+      sessionStorage.setItem(`seatLock:${layout.showId}`, JSON.stringify({ lockedUntil: lock.lockedUntil }));
+      const booking = await createBooking(String(layout.showId), ids, { movieName: movie?.title ?? show.movieName, theatreName: show.theatreName, screenName: show.screenName, seats: selectedSeats });
+      sessionStorage.setItem(`checkout:${booking.bookingId}`, JSON.stringify({ showId: layout.showId, lockedUntil: lock.lockedUntil, seats: selectedSeats.map(({ seatLabel, category, price }) => ({ label: seatLabel, category, price })) }));
+      sessionStorage.setItem(pendingKey, String(booking.bookingId));
+      sessionStorage.removeItem(`seatLock:${layout.showId}`);
+      await navigate({ to: "/checkout/$bookingId", params: { bookingId: String(booking.bookingId) } });
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+      await queryClient.invalidateQueries({ queryKey: seatLayoutQuery(layout.showId).queryKey });
+    } finally { setSubmitting(false); }
   };
   const maxColumns = Math.max(0, ...layout.tiers.flatMap((tier) => tier.rows.map((row) => row.cells.length)));
   const start = show.startTime ? new Date(/(?:Z|[+-]\d{2}:\d{2})$/.test(show.startTime) ? show.startTime : `${show.startTime}+05:30`) : undefined;
@@ -85,7 +128,7 @@ export function SeatBooking({ layout, movie, show, siblingShows }: { layout: Sea
       </div> : <div className="py-20 text-center text-text-secondary">No seats are available for this show.</div>}
     </div>
     <footer className="flex min-h-[90px] shrink-0 items-center justify-center border-t border-subtle bg-surface px-4 py-3">
-      {selected.length ? <div key="selected" className="seat-footer-enter mx-auto flex w-full max-w-[990px] items-center justify-between gap-4"><div><p className="text-[13px] text-text-muted">Selected</p><p className="mt-1 text-base font-bold">{selected.length} {selected.length === 1 ? "Seat" : "Seats"}</p></div><Button className="h-11 w-[190px] rounded-xl bg-primary text-base font-semibold text-on-primary" onClick={proceed}>Proceed</Button></div> : <div key="legend" className="seat-footer-enter"><p className="mb-3 text-center text-xs font-semibold text-accent">SCREEN THIS WAY</p><TooltipProvider><div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs font-semibold max-sm:gap-x-3"><span className="flex items-center gap-2"><span className="size-5 rounded-seat border border-seat-best-border bg-seat-best shadow-seat-best" />Best Seats<Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="size-4 text-text-muted" aria-label="About best seats"><Info className="size-3" /></Button></TooltipTrigger><TooltipContent>Recommended seats for the best viewing angle.</TooltipContent></Tooltip></span><span className="flex items-center gap-2"><span className="size-5 rounded-seat border border-seat-available bg-surface" />Available</span><span className="flex items-center gap-2"><span className="flex size-5 items-center justify-center rounded-seat border border-seat-occupied-border bg-seat-occupied text-seat-occupied-icon">×</span>Occupied</span><span className="flex items-center gap-2"><span className="size-5 rounded-seat bg-seat-selected" />Selected</span></div></TooltipProvider></div>}
+      {selected.length ? <div key="selected" className="seat-footer-enter mx-auto flex w-full max-w-[990px] items-center justify-between gap-4"><div><p className="text-[13px] text-text-muted">{lockedUntil === undefined ? "Selected" : "Seats held until"}</p><p className="mt-1 text-base font-bold">{lockedUntil === undefined ? `${selected.length} ${selected.length === 1 ? "Seat" : "Seats"}` : (() => { const deadline = parseSeatLockDeadline(lockedUntil); return deadline === null ? "Checking lock time" : formatCountdown(Math.max(0, Math.ceil((deadline - now) / 1000))); })()}</p></div><Button disabled={submitting} className="h-11 w-[190px] rounded-xl bg-primary text-base font-semibold text-on-primary" onClick={() => void proceed()}>{submitting && <LoaderCircle className="size-4 animate-spin" />}{lockedUntil === undefined ? "Proceed" : "Creating booking"}</Button></div> : <div key="legend" className="seat-footer-enter"><p className="mb-3 text-center text-xs font-semibold text-accent">SCREEN THIS WAY</p><TooltipProvider><div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs font-semibold max-sm:gap-x-3"><span className="flex items-center gap-2"><span className="size-5 rounded-seat border border-seat-best-border bg-seat-best shadow-seat-best" />Best Seats<Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="size-4 text-text-muted" aria-label="About best seats"><Info className="size-3" /></Button></TooltipTrigger><TooltipContent>Recommended seats for the best viewing angle.</TooltipContent></Tooltip></span><span className="flex items-center gap-2"><span className="size-5 rounded-seat border border-seat-available bg-surface" />Available</span><span className="flex items-center gap-2"><span className="flex size-5 items-center justify-center rounded-seat border border-seat-occupied-border bg-seat-occupied text-seat-occupied-icon">×</span>Occupied</span><span className="flex items-center gap-2"><span className="size-5 rounded-seat bg-seat-selected" />Selected</span></div></TooltipProvider></div>}
     </footer>
   </div>;
 }

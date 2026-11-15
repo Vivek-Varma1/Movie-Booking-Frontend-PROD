@@ -4,8 +4,8 @@ import { http } from "./http";
 import { toMovie, type MovieResponse } from "./movie-adapter";
 import { toTheatreShows, type MovieDateShowsResponse } from "./show-adapter";
 import { toSeatLayout } from "./seat-adapter";
-import type { ShowDetails } from "./show-details";
 import { mockMovies, mockSeatLayout, mockShows, mockTheatres } from "./mock-data";
+import { getShow as getBackendShow } from "./shows";
 
 const delay = <T,>(v: T, ms = 300) => new Promise<T>((res) => setTimeout(() => res(v), ms));
 let mockUser: User | null = null;
@@ -37,7 +37,7 @@ const mock = {
     return delay({ user: mockUser });
   },
   getCurrentUser: () => {
-    try { const email = sessionStorage.getItem(mockIdentityKey); if (email) mockUser = mockIdentity(email); } catch { /* SSR or storage disabled. */ }
+    try { const email = sessionStorage.getItem(mockIdentityKey); if (email && (!mockUser || mockUser.email !== email)) mockUser = mockIdentity(email); } catch { /* SSR or storage disabled. */ }
     return delay(mockUser);
   },
   logout: () => { mockUser = null; try { sessionStorage.removeItem(mockIdentityKey); } catch { /* Storage disabled. */ } return delay(undefined); },
@@ -70,8 +70,11 @@ export const getMovies = (): Promise<Movie[]> => impl.getMovies();
 export const getMovie = (id: string): Promise<Movie> => impl.getMovie(id);
 export const getShows = (movieId: string, date: string): Promise<TheatreShows[]> => impl.getShows(movieId, date);
 export const getSeatLayout = (showId: string): Promise<SeatLayout> => impl.getSeatLayout(showId);
-export const getShow = (showId: string): Promise<ShowDetails> => appConfig.useMock ? Promise.resolve({ showId, movieId: showId.split("_")[0] ?? "" }) : http.get<ShowDetails>(`/shows/${showId}`).then((r) => r.data);
+export const getShow = (showId: string): Promise<ShowDetails> => getBackendShow(showId);
 export const sendOtp = (email: string) => impl.sendOtp(email);
 export const verifyOtp = (email: string, otp: string): Promise<AuthResponse> => impl.verifyOtp(email, otp);
 export const getCurrentUser = (): Promise<User | null> => impl.getCurrentUser();
 export const logout = (): Promise<void> => impl.logout();
+export const updateProfile = (input: { name: string; phoneNumber: string }): Promise<User> => appConfig.useMock
+  ? mock.getCurrentUser().then((user) => { if (!user) throw new Error("Please sign in again."); mockUser = { ...user, ...input }; return mockUser; })
+  : http.put<User>("/users/profile", input).then((r) => r.data);

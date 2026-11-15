@@ -14,8 +14,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const q = useRouterState({ select: (s) => (s.location.search as { q?: string }).q ?? "" });
   const [bookingsOpen, setBookingsOpen] = useState(false);
-  const isSeatPage = useRouterState({ select: (s) => /^\/shows\/[^/]+\/seats\/?$/.test(s.location.pathname) || /^\/admin(?:\/|$)/.test(s.location.pathname) });
-  if (isSeatPage) return <>{children}</>;
+  const isStandalonePage = useRouterState({ select: (s) => /^\/shows\/[^/]+\/seats\/?$/.test(s.location.pathname) || /^\/admin(?:\/|$)/.test(s.location.pathname) || /^\/checkout\/[^/]+\/?$/.test(s.location.pathname) || /^\/booking\/success\/[^/]+\/?$/.test(s.location.pathname) });
+  if (isStandalonePage) return <>{children}</>;
   const avatar = <Button variant="secondary" size="icon" aria-label={isAuthenticated ? "Account menu" : "Sign in"} title={isAuthenticated ? "Account menu" : "Sign in"} className="size-10 shrink-0 rounded-full bg-subtle text-text-secondary shadow-none hover:bg-page-muted" onClick={isAuthenticated ? undefined : openLogin}><UserRound className="size-5" /></Button>;
   return (
     <div className="min-h-screen bg-page">

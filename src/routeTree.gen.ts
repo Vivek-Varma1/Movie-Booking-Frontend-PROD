@@ -11,14 +11,15 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
-import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminCitiesRouteImport } from './routes/admin.cities'
 import { Route as AdminMoviesRouteImport } from './routes/admin.movies'
 import { Route as AdminShowsRouteImport } from './routes/admin.shows'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as CheckoutBookingIdRouteImport } from './routes/checkout.$bookingId'
 import { Route as AdminTheatresIndexRouteImport } from './routes/admin.theatres.index'
 import { Route as AdminTheatresTheatreIdRouteImport } from './routes/admin.theatres.$theatreId'
+import { Route as BookingSuccessBookingIdRouteImport } from './routes/booking.success.$bookingId'
 import { Route as MoviesMovieIdIndexRouteImport } from './routes/movies.$movieId.index'
 import { Route as MoviesMovieIdShowsRouteImport } from './routes/movies.$movieId.shows'
 import { Route as ShowsShowIdSeatsRouteImport } from './routes/shows.$showId.seats'
@@ -31,11 +32,6 @@ const IndexRoute = IndexRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CheckoutRoute = CheckoutRouteImport.update({
-  id: '/checkout',
-  path: '/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -63,6 +59,11 @@ const AdminUsersRoute = AdminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AdminRoute,
 } as any)
+const CheckoutBookingIdRoute = CheckoutBookingIdRouteImport.update({
+  id: '/checkout/$bookingId',
+  path: '/checkout/$bookingId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminTheatresIndexRoute = AdminTheatresIndexRouteImport.update({
   id: '/theatres/',
   path: '/theatres/',
@@ -72,6 +73,11 @@ const AdminTheatresTheatreIdRoute = AdminTheatresTheatreIdRouteImport.update({
   id: '/theatres/$theatreId',
   path: '/theatres/$theatreId',
   getParentRoute: () => AdminRoute,
+} as any)
+const BookingSuccessBookingIdRoute = BookingSuccessBookingIdRouteImport.update({
+  id: '/booking/success/$bookingId',
+  path: '/booking/success/$bookingId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const MoviesMovieIdIndexRoute = MoviesMovieIdIndexRouteImport.update({
   id: '/movies/$movieId/',
@@ -92,13 +98,14 @@ const ShowsShowIdSeatsRoute = ShowsShowIdSeatsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/checkout': typeof CheckoutRoute
   '/admin/cities': typeof AdminCitiesRoute
   '/admin/movies': typeof AdminMoviesRoute
   '/admin/shows': typeof AdminShowsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/checkout/$bookingId': typeof CheckoutBookingIdRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/theatres/$theatreId': typeof AdminTheatresTheatreIdRoute
+  '/booking/success/$bookingId': typeof BookingSuccessBookingIdRoute
   '/movies/$movieId/shows': typeof MoviesMovieIdShowsRoute
   '/shows/$showId/seats': typeof ShowsShowIdSeatsRoute
   '/admin/theatres/': typeof AdminTheatresIndexRoute
@@ -106,13 +113,14 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/checkout': typeof CheckoutRoute
   '/admin/cities': typeof AdminCitiesRoute
   '/admin/movies': typeof AdminMoviesRoute
   '/admin/shows': typeof AdminShowsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/checkout/$bookingId': typeof CheckoutBookingIdRoute
   '/admin': typeof AdminIndexRoute
   '/admin/theatres/$theatreId': typeof AdminTheatresTheatreIdRoute
+  '/booking/success/$bookingId': typeof BookingSuccessBookingIdRoute
   '/movies/$movieId/shows': typeof MoviesMovieIdShowsRoute
   '/shows/$showId/seats': typeof ShowsShowIdSeatsRoute
   '/admin/theatres': typeof AdminTheatresIndexRoute
@@ -122,13 +130,14 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
-  '/checkout': typeof CheckoutRoute
   '/admin/cities': typeof AdminCitiesRoute
   '/admin/movies': typeof AdminMoviesRoute
   '/admin/shows': typeof AdminShowsRoute
   '/admin/users': typeof AdminUsersRoute
+  '/checkout/$bookingId': typeof CheckoutBookingIdRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/theatres/$theatreId': typeof AdminTheatresTheatreIdRoute
+  '/booking/success/$bookingId': typeof BookingSuccessBookingIdRoute
   '/movies/$movieId/shows': typeof MoviesMovieIdShowsRoute
   '/shows/$showId/seats': typeof ShowsShowIdSeatsRoute
   '/admin/theatres/': typeof AdminTheatresIndexRoute
@@ -139,13 +148,14 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
-    | '/checkout'
     | '/admin/cities'
     | '/admin/movies'
     | '/admin/shows'
     | '/admin/users'
+    | '/checkout/$bookingId'
     | '/admin/'
     | '/admin/theatres/$theatreId'
+    | '/booking/success/$bookingId'
     | '/movies/$movieId/shows'
     | '/shows/$showId/seats'
     | '/admin/theatres/'
@@ -153,13 +163,14 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/checkout'
     | '/admin/cities'
     | '/admin/movies'
     | '/admin/shows'
     | '/admin/users'
+    | '/checkout/$bookingId'
     | '/admin'
     | '/admin/theatres/$theatreId'
+    | '/booking/success/$bookingId'
     | '/movies/$movieId/shows'
     | '/shows/$showId/seats'
     | '/admin/theatres'
@@ -168,13 +179,14 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
-    | '/checkout'
     | '/admin/cities'
     | '/admin/movies'
     | '/admin/shows'
     | '/admin/users'
+    | '/checkout/$bookingId'
     | '/admin/'
     | '/admin/theatres/$theatreId'
+    | '/booking/success/$bookingId'
     | '/movies/$movieId/shows'
     | '/shows/$showId/seats'
     | '/admin/theatres/'
@@ -184,7 +196,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
-  CheckoutRoute: typeof CheckoutRoute
+  CheckoutBookingIdRoute: typeof CheckoutBookingIdRoute
+  BookingSuccessBookingIdRoute: typeof BookingSuccessBookingIdRoute
   MoviesMovieIdShowsRoute: typeof MoviesMovieIdShowsRoute
   ShowsShowIdSeatsRoute: typeof ShowsShowIdSeatsRoute
   MoviesMovieIdIndexRoute: typeof MoviesMovieIdIndexRoute
@@ -204,13 +217,6 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/checkout': {
-      id: '/checkout'
-      path: '/checkout'
-      fullPath: '/checkout'
-      preLoaderRoute: typeof CheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -248,6 +254,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUsersRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/checkout/$bookingId': {
+      id: '/checkout/$bookingId'
+      path: '/checkout/$bookingId'
+      fullPath: '/checkout/$bookingId'
+      preLoaderRoute: typeof CheckoutBookingIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/theatres/': {
       id: '/admin/theatres/'
       path: '/theatres'
@@ -261,6 +274,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/theatres/$theatreId'
       preLoaderRoute: typeof AdminTheatresTheatreIdRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/booking/success/$bookingId': {
+      id: '/booking/success/$bookingId'
+      path: '/booking/success/$bookingId'
+      fullPath: '/booking/success/$bookingId'
+      preLoaderRoute: typeof BookingSuccessBookingIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/movies/$movieId/': {
       id: '/movies/$movieId/'
@@ -311,7 +331,8 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
-  CheckoutRoute: CheckoutRoute,
+  CheckoutBookingIdRoute: CheckoutBookingIdRoute,
+  BookingSuccessBookingIdRoute: BookingSuccessBookingIdRoute,
   MoviesMovieIdShowsRoute: MoviesMovieIdShowsRoute,
   ShowsShowIdSeatsRoute: ShowsShowIdSeatsRoute,
   MoviesMovieIdIndexRoute: MoviesMovieIdIndexRoute,

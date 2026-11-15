@@ -10,12 +10,14 @@ function messages(value: unknown): string[] {
 }
 export function getApiErrorMessage(error: unknown): string {
   const response = record(record(error)?.['response']);
-  if (!response) return 'Cannot reach the server (check API URL / CORS)';
+  if (!response) return 'Cannot reach the server';
   const body = record(response['data']);
-  const details = messages(body?.['errors'] ?? body?.['fieldErrors']);
+  const rawDetails = body?.['errors'] ?? body?.['fieldErrors'];
+  const details = messages(rawDetails);
   const main = [body?.['message'], body?.['error'], body?.['detail']].find(v => typeof v === 'string' && v.length > 0);
-  if (main || details.length) return [main, ...details].filter(Boolean).join('; ');
+  if (main) return String(main);
+  if (details.length) return details.join('; ');
   const status = Number(response['status']);
   if (status >= 500) return 'Server error, try again';
-  return ({400:'Invalid data',403:"You don't have permission",404:'Not found',409:'Conflict: item already exists or is in use',413:'File too large',415:'Unsupported file format'} as Record<number,string>)[status] ?? 'Request failed';
+  return ({400:'Invalid data',403:"You don't have permission",404:'Not found',409:'Already exists or is in use',413:'File too large',415:'Unsupported file format'} as Record<number,string>)[status] ?? 'Request failed';
 }
