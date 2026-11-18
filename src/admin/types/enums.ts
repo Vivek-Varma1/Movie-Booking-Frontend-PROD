@@ -14,7 +14,7 @@ export const genreOptions = [
   { value: 'MYTHOLOGY', label: 'Mythology' }, { value: 'SUPERHERO', label: 'Superhero' },
 ] as const;
 export type Genre = typeof genreOptions[number]['value'];
-export const certificateOptions = [{value:'U',label:'U'},{value:'UA',label:'UA'},{value:'A',label:'A'},{value:'S',label:'S'},{value:'UA13',label:'UA13+'}] as const;
+export const certificateOptions = [{value:'U',label:'U'},{value:'UA',label:'UA'},{value:'A',label:'A'},{value:'S',label:'S'},{value:'UA13',label:'UA13+'},{value:'UA16',label:'UA16+'}] as const;
 export type Certificate = typeof certificateOptions[number]['value'];
 export const movieStatusOptions = [{value:'COMING_SOON',label:'Coming soon',tone:'info'},{value:'NOW_SHOWING',label:'Now showing',tone:'success'},{value:'ENDED',label:'Ended',tone:'neutral'}] as const;
 export type MovieStatus = typeof movieStatusOptions[number]['value'];
@@ -24,6 +24,6 @@ export const showSlotOptions = [{value:'MORNING',label:'Morning 9:00 AM',time:'0
 export type ShowSlot = typeof showSlotOptions[number]['value'];
 export const showStatusOptions = [{value:'SCHEDULED',label:'Scheduled',tone:'neutral'},{value:'OPEN_FOR_BOOKING',label:'Open for booking',tone:'success'},{value:'BOOKING_CLOSED',label:'Booking closed',tone:'warning'},{value:'SHOW_RUNNING',label:'Show running',tone:'info'},{value:'COMPLETED',label:'Completed',tone:'neutral'},{value:'CANCELLED',label:'Cancelled',tone:'danger'}] as const;
 export type ShowStatus = typeof showStatusOptions[number]['value'];
-export const roles = ['USER','ADMIN'] as const;
+export const roles = ['USER','ADMIN','STAFF'] as const;
 export type Role = typeof roles[number];
-export const roleOptions = [{value:'USER',label:'User'},{value:'ADMIN',label:'Admin'}] as const;
+export const roleOptions = [{value:'USER',label:'User'},{value:'ADMIN',label:'Admin'},{value:'STAFF',label:'Staff'}] as const;

@@ -11,18 +11,22 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as MyBookingsRouteImport } from './routes/my-bookings'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminCheckInRouteImport } from './routes/admin.check-in'
 import { Route as AdminCitiesRouteImport } from './routes/admin.cities'
 import { Route as AdminMoviesRouteImport } from './routes/admin.movies'
 import { Route as AdminShowsRouteImport } from './routes/admin.shows'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as CheckoutBookingIdRouteImport } from './routes/checkout.$bookingId'
+import { Route as MyBookingsBookingIdRouteImport } from './routes/my-bookings.$bookingId'
 import { Route as AdminTheatresIndexRouteImport } from './routes/admin.theatres.index'
 import { Route as AdminTheatresTheatreIdRouteImport } from './routes/admin.theatres.$theatreId'
 import { Route as BookingSuccessBookingIdRouteImport } from './routes/booking.success.$bookingId'
 import { Route as MoviesMovieIdIndexRouteImport } from './routes/movies.$movieId.index'
 import { Route as MoviesMovieIdShowsRouteImport } from './routes/movies.$movieId.shows'
 import { Route as ShowsShowIdSeatsRouteImport } from './routes/shows.$showId.seats'
+import { Route as TicketVerifyTicketNumberRouteImport } from './routes/ticket.verify.$ticketNumber'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,9 +38,19 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MyBookingsRoute = MyBookingsRouteImport.update({
+  id: '/my-bookings',
+  path: '/my-bookings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCheckInRoute = AdminCheckInRouteImport.update({
+  id: '/check-in',
+  path: '/check-in',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminCitiesRoute = AdminCitiesRouteImport.update({
@@ -63,6 +77,11 @@ const CheckoutBookingIdRoute = CheckoutBookingIdRouteImport.update({
   id: '/checkout/$bookingId',
   path: '/checkout/$bookingId',
   getParentRoute: () => rootRouteImport,
+} as any)
+const MyBookingsBookingIdRoute = MyBookingsBookingIdRouteImport.update({
+  id: '/$bookingId',
+  path: '/$bookingId',
+  getParentRoute: () => MyBookingsRoute,
 } as any)
 const AdminTheatresIndexRoute = AdminTheatresIndexRouteImport.update({
   id: '/theatres/',
@@ -94,35 +113,49 @@ const ShowsShowIdSeatsRoute = ShowsShowIdSeatsRouteImport.update({
   path: '/shows/$showId/seats',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TicketVerifyTicketNumberRoute =
+  TicketVerifyTicketNumberRouteImport.update({
+    id: '/ticket/verify/$ticketNumber',
+    path: '/ticket/verify/$ticketNumber',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/my-bookings': typeof MyBookingsRouteWithChildren
+  '/admin/check-in': typeof AdminCheckInRoute
   '/admin/cities': typeof AdminCitiesRoute
   '/admin/movies': typeof AdminMoviesRoute
   '/admin/shows': typeof AdminShowsRoute
   '/admin/users': typeof AdminUsersRoute
   '/checkout/$bookingId': typeof CheckoutBookingIdRoute
+  '/my-bookings/$bookingId': typeof MyBookingsBookingIdRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/theatres/$theatreId': typeof AdminTheatresTheatreIdRoute
   '/booking/success/$bookingId': typeof BookingSuccessBookingIdRoute
   '/movies/$movieId/shows': typeof MoviesMovieIdShowsRoute
   '/shows/$showId/seats': typeof ShowsShowIdSeatsRoute
+  '/ticket/verify/$ticketNumber': typeof TicketVerifyTicketNumberRoute
   '/admin/theatres/': typeof AdminTheatresIndexRoute
   '/movies/$movieId/': typeof MoviesMovieIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/my-bookings': typeof MyBookingsRouteWithChildren
+  '/admin/check-in': typeof AdminCheckInRoute
   '/admin/cities': typeof AdminCitiesRoute
   '/admin/movies': typeof AdminMoviesRoute
   '/admin/shows': typeof AdminShowsRoute
   '/admin/users': typeof AdminUsersRoute
   '/checkout/$bookingId': typeof CheckoutBookingIdRoute
+  '/my-bookings/$bookingId': typeof MyBookingsBookingIdRoute
   '/admin': typeof AdminIndexRoute
   '/admin/theatres/$theatreId': typeof AdminTheatresTheatreIdRoute
   '/booking/success/$bookingId': typeof BookingSuccessBookingIdRoute
   '/movies/$movieId/shows': typeof MoviesMovieIdShowsRoute
   '/shows/$showId/seats': typeof ShowsShowIdSeatsRoute
+  '/ticket/verify/$ticketNumber': typeof TicketVerifyTicketNumberRoute
   '/admin/theatres': typeof AdminTheatresIndexRoute
   '/movies/$movieId': typeof MoviesMovieIdIndexRoute
 }
@@ -130,16 +163,20 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/my-bookings': typeof MyBookingsRouteWithChildren
+  '/admin/check-in': typeof AdminCheckInRoute
   '/admin/cities': typeof AdminCitiesRoute
   '/admin/movies': typeof AdminMoviesRoute
   '/admin/shows': typeof AdminShowsRoute
   '/admin/users': typeof AdminUsersRoute
   '/checkout/$bookingId': typeof CheckoutBookingIdRoute
+  '/my-bookings/$bookingId': typeof MyBookingsBookingIdRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/theatres/$theatreId': typeof AdminTheatresTheatreIdRoute
   '/booking/success/$bookingId': typeof BookingSuccessBookingIdRoute
   '/movies/$movieId/shows': typeof MoviesMovieIdShowsRoute
   '/shows/$showId/seats': typeof ShowsShowIdSeatsRoute
+  '/ticket/verify/$ticketNumber': typeof TicketVerifyTicketNumberRoute
   '/admin/theatres/': typeof AdminTheatresIndexRoute
   '/movies/$movieId/': typeof MoviesMovieIdIndexRoute
 }
@@ -148,47 +185,59 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/my-bookings'
+    | '/admin/check-in'
     | '/admin/cities'
     | '/admin/movies'
     | '/admin/shows'
     | '/admin/users'
     | '/checkout/$bookingId'
+    | '/my-bookings/$bookingId'
     | '/admin/'
     | '/admin/theatres/$theatreId'
     | '/booking/success/$bookingId'
     | '/movies/$movieId/shows'
     | '/shows/$showId/seats'
+    | '/ticket/verify/$ticketNumber'
     | '/admin/theatres/'
     | '/movies/$movieId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/my-bookings'
+    | '/admin/check-in'
     | '/admin/cities'
     | '/admin/movies'
     | '/admin/shows'
     | '/admin/users'
     | '/checkout/$bookingId'
+    | '/my-bookings/$bookingId'
     | '/admin'
     | '/admin/theatres/$theatreId'
     | '/booking/success/$bookingId'
     | '/movies/$movieId/shows'
     | '/shows/$showId/seats'
+    | '/ticket/verify/$ticketNumber'
     | '/admin/theatres'
     | '/movies/$movieId'
   id:
     | '__root__'
     | '/'
     | '/admin'
+    | '/my-bookings'
+    | '/admin/check-in'
     | '/admin/cities'
     | '/admin/movies'
     | '/admin/shows'
     | '/admin/users'
     | '/checkout/$bookingId'
+    | '/my-bookings/$bookingId'
     | '/admin/'
     | '/admin/theatres/$theatreId'
     | '/booking/success/$bookingId'
     | '/movies/$movieId/shows'
     | '/shows/$showId/seats'
+    | '/ticket/verify/$ticketNumber'
     | '/admin/theatres/'
     | '/movies/$movieId/'
   fileRoutesById: FileRoutesById
@@ -196,10 +245,12 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
+  MyBookingsRoute: typeof MyBookingsRouteWithChildren
   CheckoutBookingIdRoute: typeof CheckoutBookingIdRoute
   BookingSuccessBookingIdRoute: typeof BookingSuccessBookingIdRoute
   MoviesMovieIdShowsRoute: typeof MoviesMovieIdShowsRoute
   ShowsShowIdSeatsRoute: typeof ShowsShowIdSeatsRoute
+  TicketVerifyTicketNumberRoute: typeof TicketVerifyTicketNumberRoute
   MoviesMovieIdIndexRoute: typeof MoviesMovieIdIndexRoute
 }
 
@@ -219,11 +270,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/my-bookings': {
+      id: '/my-bookings'
+      path: '/my-bookings'
+      fullPath: '/my-bookings'
+      preLoaderRoute: typeof MyBookingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/': {
       id: '/admin/'
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/check-in': {
+      id: '/admin/check-in'
+      path: '/check-in'
+      fullPath: '/admin/check-in'
+      preLoaderRoute: typeof AdminCheckInRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/cities': {
@@ -260,6 +325,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/checkout/$bookingId'
       preLoaderRoute: typeof CheckoutBookingIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/my-bookings/$bookingId': {
+      id: '/my-bookings/$bookingId'
+      path: '/$bookingId'
+      fullPath: '/my-bookings/$bookingId'
+      preLoaderRoute: typeof MyBookingsBookingIdRouteImport
+      parentRoute: typeof MyBookingsRoute
     }
     '/admin/theatres/': {
       id: '/admin/theatres/'
@@ -303,10 +375,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShowsShowIdSeatsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ticket/verify/$ticketNumber': {
+      id: '/ticket/verify/$ticketNumber'
+      path: '/ticket/verify/$ticketNumber'
+      fullPath: '/ticket/verify/$ticketNumber'
+      preLoaderRoute: typeof TicketVerifyTicketNumberRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface AdminRouteChildren {
+  AdminCheckInRoute: typeof AdminCheckInRoute
   AdminCitiesRoute: typeof AdminCitiesRoute
   AdminMoviesRoute: typeof AdminMoviesRoute
   AdminShowsRoute: typeof AdminShowsRoute
@@ -317,6 +397,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminCheckInRoute: AdminCheckInRoute,
   AdminCitiesRoute: AdminCitiesRoute,
   AdminMoviesRoute: AdminMoviesRoute,
   AdminShowsRoute: AdminShowsRoute,
@@ -328,13 +409,27 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface MyBookingsRouteChildren {
+  MyBookingsBookingIdRoute: typeof MyBookingsBookingIdRoute
+}
+
+const MyBookingsRouteChildren: MyBookingsRouteChildren = {
+  MyBookingsBookingIdRoute: MyBookingsBookingIdRoute,
+}
+
+const MyBookingsRouteWithChildren = MyBookingsRoute._addFileChildren(
+  MyBookingsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
+  MyBookingsRoute: MyBookingsRouteWithChildren,
   CheckoutBookingIdRoute: CheckoutBookingIdRoute,
   BookingSuccessBookingIdRoute: BookingSuccessBookingIdRoute,
   MoviesMovieIdShowsRoute: MoviesMovieIdShowsRoute,
   ShowsShowIdSeatsRoute: ShowsShowIdSeatsRoute,
+  TicketVerifyTicketNumberRoute: TicketVerifyTicketNumberRoute,
   MoviesMovieIdIndexRoute: MoviesMovieIdIndexRoute,
 }
 export const routeTree = rootRouteImport

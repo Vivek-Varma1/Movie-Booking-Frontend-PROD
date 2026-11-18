@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Movie } from "@/types";
 import { cn } from "@/lib/utils";
+import { setPreferredLanguage } from "@/lib/groupMovies";
 
 export function HeroCarousel({ movies }: { movies: Movie[] }) {
   const slides = movies.slice(0, 5);
@@ -24,7 +25,7 @@ export function HeroCarousel({ movies }: { movies: Movie[] }) {
           <h1 className="hero-title">{movie.title}</h1>
           <p className="hero-genre mt-4">{movie.certificate} <span className="mx-2 text-text-muted">|</span> {movie.genres.length ? movie.genres.slice(0, 2).join(", ") : movie.languages.join(", ")}{movie.genres.length > 2 && <span> +{movie.genres.length - 2} more</span>}</p>
           {movie.description && <p className="hero-description mt-4 max-w-[700px] text-text-secondary">{movie.description}</p>}
-          <Button asChild className="mt-7 h-16 w-[200px] rounded-card text-xl font-semibold shadow-none max-sm:mt-5 max-sm:h-12 max-sm:w-40 max-sm:text-base"><Link to="/movies/$movieId" params={{ movieId: movie.id }} tabIndex={i === index ? 0 : -1}>Book now</Link></Button>
+          <Button asChild className="mt-7 h-16 w-[200px] rounded-card text-xl font-semibold shadow-none max-sm:mt-5 max-sm:h-12 max-sm:w-40 max-sm:text-base"><Link to="/movies/$movieId" params={{ movieId: movie.id }} onClick={() => setPreferredLanguage(movie.languages[0] ?? "")} tabIndex={i === index ? 0 : -1}>Book now</Link></Button>
         </div>
         <img src={movie.posterUrl} alt={`${movie.title} poster`} className="hero-poster" width={334} height={445} fetchPriority={i === 0 ? "high" : "auto"} />
       </div>

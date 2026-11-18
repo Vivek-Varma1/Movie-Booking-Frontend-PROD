@@ -83,7 +83,7 @@ export function SeatBooking({ layout, movie, show, siblingShows, cityId = "" }: 
     try {
       const pendingKey = `pendingBooking:${layout.showId}`;
       const pending = sessionStorage.getItem(pendingKey);
-      if (pending) { try { await cancelBooking(pending); } catch { /* An expired booking does not block a new attempt. */ } sessionStorage.removeItem(pendingKey); }
+      if (pending) { try { await cancelBooking(pending); await queryClient.invalidateQueries({ queryKey: ["bookings", "me"] }); } catch { /* An expired booking does not block a new attempt. */ } sessionStorage.removeItem(pendingKey); }
       const selectedSeats = layout.tiers.flatMap((tier) => tier.rows.flatMap((row) => row.cells.filter((cell): cell is NonNullable<typeof cell> => cell !== null && selected.includes(cell.id)).map((cell) => {
         const parsedId = Number(cell.showSeatId ?? cell.id);
         const mockId = Array.from(`${layout.showId}:${cell.id}`).reduce((hash, char) => (Math.imul(hash, 31) + char.charCodeAt(0)) >>> 0, 7) % 1_000_000_000;

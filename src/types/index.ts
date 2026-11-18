@@ -1,3 +1,5 @@
+import type { Role } from "@/admin/types/enums";
+
 export interface CastMember { name: string; photoUrl: string; role: string }
 export interface Trailer { id: string; title: string; thumbnailUrl: string; duration: string; videoUrl?: string }
 export interface GalleryImage { id: string; imageUrl: string }
@@ -49,5 +51,5 @@ export interface SeatRow { label: string; cells: (SeatCell | null)[] }
 export interface SeatTier { name: string; price: number; rows: SeatRow[] }
 export interface SeatLayout { showId: string; tiers: SeatTier[] }
 
-export interface User { id: string | number; email: string; name?: string; phoneNumber?: string | null; role?: "USER" | "ADMIN" }
+export interface User { id: string | number; email: string; name?: string; phoneNumber?: string | null; role?: Role }
 export interface AuthResponse { user: User }

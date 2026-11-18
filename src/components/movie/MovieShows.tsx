@@ -7,13 +7,15 @@ import { TheatreShowCard } from "./TheatreShowCard";
 import { cn } from "@/lib/utils";
 import { filterTheatreShows, SHOW_TIME_ZONE } from "@/lib/show-filters";
 import type { Movie, TheatreShows } from "@/types";
+import type { MovieEdition } from "@/lib/groupMovies";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 
 export interface ShowFilters { afterFive: boolean; availableOnly: boolean; favouritesOnly: boolean }
-interface Props { movie: Movie; groups: TheatreShows[]; dates: string[]; cityId: string; today: string; date: string; initialNow: string; filters: ShowFilters; onDate: (date: string) => void; onFilters: (filters: ShowFilters) => void }
+interface Props { movie: Movie; groups: TheatreShows[]; dates: string[]; cityId: string; today: string; date: string; initialNow: string; filters: ShowFilters; languageEditions?: MovieEdition[]; onLanguageSelect?: (edition: MovieEdition) => void | Promise<void>; onDate: (date: string) => void; onFilters: (filters: ShowFilters) => void }
 const weekdayFormat = new Intl.DateTimeFormat("en-US", { timeZone: SHOW_TIME_ZONE, weekday: "short" });
 const monthFormat = new Intl.DateTimeFormat("en-US", { timeZone: SHOW_TIME_ZONE, month: "short" });
 
-export function MovieShows({ movie, groups, dates, cityId, today, date, initialNow, filters, onDate, onFilters }: Props) {
+export function MovieShows({ movie, groups, dates, cityId, today, date, initialNow, filters, languageEditions = [], onLanguageSelect, onDate, onFilters }: Props) {
   const [now, setNow] = useState(new Date(initialNow));
   const [favourites, setFavourites] = useState<string[]>([]);
   useEffect(() => { setNow(new Date()); const timer = setInterval(() => setNow(new Date()), 30_000); return () => clearInterval(timer); }, []);
@@ -26,8 +28,9 @@ export function MovieShows({ movie, groups, dates, cityId, today, date, initialN
       <div className="shows-container pb-5 pt-8 max-sm:pt-6">
         <div className="flex items-center gap-6 max-sm:gap-4">
           <img src={movie.posterUrl} alt={`${movie.title} poster`} className="h-32 w-24 shrink-0 rounded-lg object-cover" />
-          <div className="min-w-0"><h1 className="break-words text-[28px] font-bold leading-tight">{movie.title} {year && <span className="font-normal text-text-muted">({year})</span>}</h1><p className="mt-3 text-[13px] text-text-secondary">{[movie.certificate, `${hours}h ${minutes}m`].filter(Boolean).join(" | ")}</p><p className="mt-1.5 text-[13px] text-text-secondary">{movie.languages.join(", ")}</p>{movie.genres.length > 0 && <p className="mt-1.5 text-[13px] text-text-secondary">{movie.genres.join(", ")}</p>}</div>
+          <div className="min-w-0"><h1 className="break-words text-[28px] font-bold leading-tight">{movie.title} ({movie.languages[0] ?? "Language"}) {year && <span className="font-normal text-text-muted">({year})</span>}</h1><p className="mt-3 text-[13px] text-text-secondary">{[movie.certificate, `${hours}h ${minutes}m`].filter(Boolean).join(" | ")}</p>{movie.genres.length > 0 && <p className="mt-1.5 text-[13px] text-text-secondary">{movie.genres.join(", ")}</p>}</div>
         </div>
+        <div className="mt-5"><LanguageSwitcher editions={languageEditions} selectedId={movie.id} onSelect={(edition) => onLanguageSelect?.(edition)} /></div>
         <div className="media-scroller mt-7 flex gap-3 overflow-x-auto pb-2" role="group" aria-label="Select show date">
           {dates.map((value, index) => {
             const tileDate = new Date(`${value}T12:00:00+05:30`);

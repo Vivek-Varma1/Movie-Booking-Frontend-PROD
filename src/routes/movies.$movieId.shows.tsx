@@ -1,12 +1,15 @@
 import { createFileRoute, Link, useRouter, type ErrorComponentProps } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { CalendarDays, RotateCcw } from "lucide-react";
 import { MovieShows } from "@/components/movie/MovieShows";
 import { Button } from "@/components/ui/button";
-import { movieQuery, showDatesQuery, showsQuery } from "@/hooks/queries";
+import { movieQuery, moviesQuery, showDatesQuery, showsQuery } from "@/hooks/queries";
 import { bookingDate } from "@/lib/show-filters";
 import { appConfig } from "@/theme/theme";
 import { useCity } from "@/components/city/CityContext";
+import { getSiblings, setPreferredLanguage, type MovieEdition } from "@/lib/groupMovies";
+import { LanguageSwitcher } from "@/components/movie/LanguageSwitcher";
 
 export const Route = createFileRoute("/movies/$movieId/shows")({
   validateSearch: (search: { date?: unknown; afterFive?: unknown; availableOnly?: unknown; favouritesOnly?: unknown }) => ({
@@ -32,12 +35,26 @@ function ShowsPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const { selectedCity, loading: cityLoading, error: cityError, retry: retryCities } = useCity();
+  const queryClient = useQueryClient();
   const cityId = selectedCity ? String(selectedCity.cityId) : "";
   const movieResult = useQuery({ ...movieQuery(movieId), enabled: !!cityId, staleTime: 60_000 });
+  const cityMovies = useQuery({ ...moviesQuery(cityId, ""), enabled: !!cityId });
   const datesResult = useQuery({ ...showDatesQuery(movieId, cityId), enabled: !!cityId });
   const dates = datesResult.data ?? [];
   const date = dates.includes(search.date) ? search.date : dates[0] ?? "";
   const showsResult = useQuery({ ...showsQuery(movieId, date, cityId), enabled: !!cityId && !!date });
+  const editionsList = cityMovies.data ?? [];
+  const siblings = movieResult.data ? getSiblings(editionsList.some((item) => item.id === movieResult.data?.id) ? editionsList : [...editionsList, movieResult.data], movieId) : [];
+  useEffect(() => { if (movieResult.data?.languages[0]) setPreferredLanguage(movieResult.data.languages[0]); }, [movieResult.data?.id, movieResult.data?.languages]);
+  const switchLanguage = async (edition: MovieEdition) => {
+    try {
+      const siblingDates = await queryClient.ensureQueryData(showDatesQuery(edition.id, cityId));
+      const nextDate = siblingDates.includes(date) ? date : siblingDates[0] ?? "";
+      await navigate({ to: "/movies/$movieId/shows", params: { movieId: edition.id }, search: { ...search, date: nextDate }, replace: true });
+    } catch {
+      await navigate({ to: "/movies/$movieId/shows", params: { movieId: edition.id }, search: { ...search, date: "" }, replace: true });
+    }
+  };
   const today = bookingDate(new Date());
   if (cityLoading) return <ShowsSkeleton />;
   if (cityError) return <div role="alert" className="shows-container py-24 text-center"><h1 className="text-2xl font-bold">Cities couldn’t load</h1><p className="mt-3 text-text-secondary">{cityError}</p><Button className="mt-6" onClick={retryCities}><RotateCcw />Try again</Button></div>;
@@ -45,10 +62,10 @@ function ShowsPage() {
   if (movieResult.isPending || datesResult.isPending) return <ShowsSkeleton />;
   if (movieResult.isError || datesResult.isError) return <ShowsError error={movieResult.error ?? datesResult.error ?? new Error("Showtimes couldn’t load")} reset={() => { void (movieResult.isError ? movieResult.refetch() : datesResult.refetch()); }} />;
   if (!movieResult.data) return <div className="shows-container py-24 text-center"><h1 className="text-2xl font-bold">Movie not found</h1><Button asChild variant="outline" className="mt-5"><Link to="/">Browse movies</Link></Button></div>;
-  if (dates.length === 0) return <div className="shows-container py-24 text-center"><CalendarDays className="mx-auto size-10 text-text-muted" /><h1 className="mt-5 text-2xl font-bold">No show dates available</h1><p className="mt-2 text-text-secondary">There are no show dates for {selectedCity.name} yet.</p><Button asChild variant="outline" className="mt-5"><Link to="/">Browse movies</Link></Button></div>;
+  if (dates.length === 0) return <div className="shows-container py-12"><div className="mb-8 rounded-card bg-surface p-5"><LanguageSwitcher editions={siblings} selectedId={movieResult.data.id} onSelect={switchLanguage}/></div><div className="py-16 text-center"><CalendarDays className="mx-auto size-10 text-text-muted" /><h1 className="mt-5 text-2xl font-bold">No show dates available</h1><p className="mt-2 text-text-secondary">There are no show dates for {selectedCity.name} yet.</p><Button asChild variant="outline" className="mt-5"><Link to="/">Browse movies</Link></Button></div></div>;
   if (showsResult.isPending) return <ShowsSkeleton />;
   if (showsResult.isError) return <ShowsError error={showsResult.error} reset={() => { void showsResult.refetch(); }} />;
-  return <MovieShows movie={movieResult.data} groups={showsResult.data ?? []} dates={dates} cityId={cityId} today={today} date={date} initialNow={new Date().toISOString()} filters={search} onDate={(nextDate) => navigate({ search: { ...search, date: nextDate }, resetScroll: false })} onFilters={(filters) => navigate({ search: { ...search, ...filters }, replace: true, resetScroll: false })} />;
+  return <MovieShows movie={movieResult.data} groups={showsResult.data ?? []} dates={dates} cityId={cityId} today={today} date={date} initialNow={new Date().toISOString()} filters={search} languageEditions={siblings} onLanguageSelect={switchLanguage} onDate={(nextDate) => navigate({ search: { ...search, date: nextDate }, resetScroll: false })} onFilters={(filters) => navigate({ search: { ...search, ...filters }, replace: true, resetScroll: false })} />;
 }
 function ShowsSkeleton() {
   return <div aria-busy="true" aria-label="Loading showtimes" className="animate-pulse"><div className="shows-container py-8"><div className="flex gap-6"><div className="h-32 w-24 rounded-lg bg-page-muted" /><div className="flex-1 space-y-4 pt-2"><div className="h-8 w-3/4 rounded bg-page-muted" /><div className="h-4 w-40 rounded bg-page-muted" /><div className="h-4 w-24 rounded bg-page-muted" /></div></div><div className="mt-7 flex gap-4">{Array.from({ length: 7 }, (_, index) => <div key={index} className="size-14 shrink-0 rounded-xl bg-page-muted" />)}</div></div><div className="bg-page-muted py-5"><div className="shows-container space-y-3">{[0, 1, 2].map((index) => <div key={index} className="h-28 rounded-card bg-surface" />)}</div></div></div>;

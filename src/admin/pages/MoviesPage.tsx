@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { Film, LockKeyhole, Plus } from 'lucide-react';
+import { Braces, Film, LockKeyhole, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +21,7 @@ import { useAdminMoviesQuery, useCreateMovie, useDeleteMovie, useUpdateMovie, us
 import { getApiErrorMessage } from '../lib/api-error';
 import { certificateOptions, genreOptions, languageOptions, movieStatusOptions, type MovieStatus } from '../types/enums';
 import type { MovieResponse } from '../types';
+import { MovieImportDialog } from '../components/MovieImportDialog';
 
 const schema = z.object({
   movieName: z.string().trim().min(1, 'Movie name is required').max(255, 'Use 255 characters or fewer'),
@@ -84,7 +85,7 @@ export function MovieFormDialog({ open, onOpenChange, movie }: {open:boolean;onO
   return <FormDialog open={open} onOpenChange={onOpenChange} title={edit?'Edit movie':'Add movie'} description={edit?'Update the movie status, trailer, synopsis or poster.':'Add a movie to the catalogue.'} submitting={pending} submitDisabled={!hasChanges} onSubmit={handleSubmit(submit)} submitLabel={edit?'Save changes':'Add movie'} className="sm:max-w-3xl">
     <TooltipProvider><div className="space-y-5">
       {edit ? <div className="grid gap-4 sm:grid-cols-2">{locked('Movie name',movie.movieName)}{locked('Language',labelFor(languageOptions,movie.language))}{locked('Duration',durationLabel(movie.durationInMinutes))}{locked('Genres',movie.genres.map(value=>labelFor(genreOptions,value)).join(', '))}{locked('Certificate',labelFor(certificateOptions,movie.certificate))}{locked('Release date',dateLabel(movie.releaseDate))}</div> : <>
-        <div className="space-y-2"><Label htmlFor="movie-name">Movie name</Label><Input id="movie-name" maxLength={255} aria-invalid={!!fieldError('movieName')} {...register('movieName')}/><FieldError message={fieldError('movieName')}/></div>
+        <div className="space-y-2"><Label htmlFor="movie-name">Movie name</Label><Input id="movie-name" maxLength={255} aria-invalid={!!fieldError('movieName')} {...register('movieName')}/><p className="text-xs text-text-muted">Use exactly the same name for other language editions so they appear as one movie.</p><FieldError message={fieldError('movieName')}/></div>
         <div className="grid gap-4 sm:grid-cols-2"><div className="space-y-2"><Label htmlFor="movie-duration">Duration (minutes)</Label><Input id="movie-duration" type="number" min={30} max={500} aria-invalid={!!fieldError('durationInMinutes')} {...register('durationInMinutes')}/><FieldError message={fieldError('durationInMinutes')}/></div>
           <div className="space-y-2"><Label htmlFor="movie-language">Language</Label><select id="movie-language" className={selectClass} aria-invalid={!!fieldError('language')} {...register('language')}><option value="">Select language</option>{languageOptions.map(option=><option key={option.value} value={option.value}>{option.label}</option>)}</select><FieldError message={fieldError('language')}/></div>
           <div className="space-y-2"><Label htmlFor="movie-certificate">Certificate</Label><select id="movie-certificate" className={selectClass} aria-invalid={!!fieldError('certificate')} {...register('certificate')}><option value="">Select certificate</option>{certificateOptions.map(option=><option key={option.value} value={option.value}>{option.label}</option>)}</select><FieldError message={fieldError('certificate')}/></div>
@@ -104,6 +105,7 @@ export default function MoviesPage() {
   const moviesQuery=useAdminMoviesQuery(); const remove=useDeleteMovie(); const statusUpdate=useUpdateMovieStatus();
   const [statusFilter,setStatusFilter]=useState(''); const [languageFilter,setLanguageFilter]=useState('');
   const [formOpen,setFormOpen]=useState(false); const [editing,setEditing]=useState<MovieResponse|null>(null); const [deleting,setDeleting]=useState<MovieResponse|null>(null); const [deleteError,setDeleteError]=useState('');
+  const [importOpen,setImportOpen]=useState(false);
   const movies=moviesQuery.data??[];
   const filtered=useMemo(()=>movies.filter(movie=>(!statusFilter||movie.movieStatus===statusFilter)&&(!languageFilter||movie.language===languageFilter)),[movies,statusFilter,languageFilter]);
   const columns:Column<MovieResponse>[]=[
@@ -118,11 +120,12 @@ export default function MoviesPage() {
   const deleteMovie=async()=>{if(!deleting)return;setDeleteError('');try{await remove.mutateAsync(deleting.id);setDeleting(null);}catch(error){setDeleteError(getApiErrorMessage(error));}};
   const selectClass='h-10 min-w-36 rounded-md border border-subtle bg-surface px-3 text-sm text-text-primary';
   return <>
-    <PageHeader title="Movies" subtitle="Manage the movie catalogue and release information." primaryAction={<Button onClick={()=>{setEditing(null);setFormOpen(true);}}><Plus className="size-4"/>Add movie</Button>}/>
+    <PageHeader title="Movies" subtitle="Manage the movie catalogue and release information." primaryAction={<div className="flex flex-wrap gap-2"><Button type="button" variant="outline" onClick={()=>setImportOpen(true)}><Braces className="size-4"/>Import JSON</Button><Button onClick={()=>{setEditing(null);setFormOpen(true);}}><Plus className="size-4"/>Add movie</Button></div>}/>
     <DataTable rows={filtered} columns={columns} rowKey={movie=>movie.id} loading={moviesQuery.isLoading} error={moviesQuery.error?getApiErrorMessage(moviesQuery.error):undefined} onRetry={()=>void moviesQuery.refetch()} searchColumns={[columns[1]!]} emptyTitle="No movies yet" emptyIcon={<Film className="size-9 text-text-muted"/>} emptyAction={<Button onClick={()=>{setEditing(null);setFormOpen(true);}}><Plus className="size-4"/>Add movie</Button>}
       filterSlot={<><label className="flex items-center gap-2 text-sm text-text-secondary"><span>Status</span><select aria-label="Filter movies by status" className={selectClass} value={statusFilter} onChange={event=>setStatusFilter(event.target.value)}><option value="">All statuses</option>{movieStatusOptions.map(option=><option key={option.value} value={option.value}>{option.label}</option>)}</select></label><label className="flex items-center gap-2 text-sm text-text-secondary"><span>Language</span><select aria-label="Filter movies by language" className={selectClass} value={languageFilter} onChange={event=>setLanguageFilter(event.target.value)}><option value="">All languages</option>{languageOptions.map(option=><option key={option.value} value={option.value}>{option.label}</option>)}</select></label></>}
       actions={movie=>[...movieStatusOptions.filter(option=>option.value!==movie.movieStatus).map(option=>({label:`Set ${option.label}`,onSelect:()=>statusUpdate.mutate({id:movie.id,movieStatus:option.value})})),{label:'Edit',onSelect:()=>{setEditing(movie);setFormOpen(true);}},{label:'Delete',destructive:true,onSelect:()=>{setDeleting(movie);setDeleteError('');}}]}/>
     <MovieFormDialog open={formOpen} onOpenChange={open=>{setFormOpen(open);if(!open)setEditing(null);}} movie={editing}/>
+    <MovieImportDialog open={importOpen} onOpenChange={setImportOpen}/>
     <ConfirmDialog open={!!deleting} onOpenChange={open=>{if(!open&&!remove.isPending){setDeleting(null);setDeleteError('');}}} title={`Delete ${deleting?.movieName??'movie'}?`} description="Type the movie name to confirm deletion." confirmName={deleting?.movieName??''} loading={remove.isPending} onConfirm={deleteMovie} error={deleteError}/>
   </>;
 }

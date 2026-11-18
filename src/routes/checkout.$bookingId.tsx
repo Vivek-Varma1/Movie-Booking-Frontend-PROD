@@ -89,16 +89,16 @@ function CheckoutPage() {
     if (timeLeft !== 0 || !booking || booking.bookingStatus === "CONFIRMED") return;
     setExpired(true);
     if (booking.bookingStatus !== "PAYMENT_STARTED" || expiredRef.current) return;
-    expiredRef.current = true; void cancelBooking(bookingId).catch(() => {});
+    expiredRef.current = true; void cancelBooking(bookingId).then(() => queryClient.invalidateQueries({ queryKey: ["bookings", "me"] })).catch(() => {});
   }, [timeLeft, booking, bookingId]);
   const clearBookingContext = useCallback(() => { sessionStorage.removeItem(`checkout:${bookingId}`); if (context?.showId) { sessionStorage.removeItem(`pendingBooking:${context.showId}`); sessionStorage.removeItem(`seatLock:${context.showId}`); } }, [bookingId, context]);
   const success = useCallback(() => { clearBookingContext(); void navigate({ to: "/booking/success/$bookingId", params: { bookingId }, replace: true }); }, [clearBookingContext, navigate, bookingId]);
   const confirm = useCallback(async (response: RazorResponse) => {
     setConfirming(true); setConfirmError(""); setPaymentId(response.razorpay_payment_id);
-    try { await verifyPayment({ bookingId: String(bookingId), ...response }); success(); }
+    try { await verifyPayment({ bookingId: String(bookingId), ...response }); await queryClient.invalidateQueries({ queryKey: ["bookings", "me"] }); success(); }
     catch (e) { const message = getErrorMessage(e); setConfirmError(message); toast.error(message); }
     finally { setConfirming(false); }
-  }, [bookingId, success]);
+  }, [bookingId, success, queryClient]);
   const pay = useCallback(async () => {
     if (paymentLock.current || !booking || expired) return; paymentLock.current = true; setBusy(true); setFailedPayment("");
     try {

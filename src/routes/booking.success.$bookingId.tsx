@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Check, Film, LoaderCircle } from "lucide-react";
+import { TicketCard } from "@/components/booking/TicketCard";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/auth/AuthContext";
 import { getBooking, getTicket, isTicketNotFound, type Booking, type Ticket } from "@/services/bookings";
@@ -29,8 +30,6 @@ function BookingSuccessPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reload, setReload] = useState(0);
-  const [qrLoaded, setQrLoaded] = useState(false);
-  const [qrFailed, setQrFailed] = useState(false);
 
   useEffect(() => {
     if (isReady && !isAuthenticated) openAuthModal({ onSuccess: () => void navigate({ to: "/booking/success/$bookingId", params: { bookingId }, replace: true }) });
@@ -89,31 +88,7 @@ function BookingSuccessPage() {
       {!loading && booking && booking.bookingStatus !== "CONFIRMED" && <section className="w-full rounded-card border border-subtle bg-surface px-6 py-12 text-center"><h2 className="text-xl font-bold">Booking {booking.bookingStatus.toLowerCase().replaceAll("_", " ")}</h2><p className="mt-2 text-sm text-text-secondary">Your booking is not confirmed yet.</p><Button asChild className="mt-5"><Link to="/">Back to home</Link></Button></section>}
       {!loading && pending && <section className="w-full rounded-card border border-subtle bg-surface px-6 py-12 text-center"><h2 className="text-lg font-semibold">Your booking is confirmed</h2><p className="mt-2 text-sm text-text-secondary">Your ticket will appear in My bookings shortly.</p><Button asChild variant="outline" className="mt-5"><Link to="/">Back to home</Link></Button></section>}
 
-      {!loading && ticket && booking && <>
-        <article className="ticket-card ticket-card-width w-full overflow-hidden rounded-card border border-subtle bg-surface shadow-movie">
-          <div className="p-5 sm:p-7">
-            <div className="flex items-center gap-4">
-              {poster ? <img src={poster} alt={`${ticket.movieName} poster`} className="h-24 w-16 shrink-0 rounded-lg border border-subtle object-cover sm:h-28 sm:w-[74px]" /> : <div className="flex h-24 w-16 shrink-0 items-center justify-center rounded-lg bg-page-muted text-text-muted sm:h-28 sm:w-[74px]"><Film className="size-7" /></div>}
-              <div className="min-w-0"><h2 className="text-lg font-bold leading-snug sm:text-xl">{ticket.movieName}</h2><p className="mt-2 text-sm text-text-secondary">{ticket.theatreName}</p><p className="text-sm text-text-secondary">{ticket.screenName}</p></div>
-            </div>
-            <div className="mt-6 grid grid-cols-1 gap-4 border-t border-subtle pt-5 sm:grid-cols-2">
-              <div><p className="text-xs font-medium uppercase tracking-wide text-text-muted">Date &amp; time</p><p className="mt-1 text-sm font-semibold">{formatDate(ticket.startDateTime, { weekday: "short", day: "numeric", month: "short" })}, {formatTime(ticket.startDateTime)}</p></div>
-              <div><p className="text-xs font-medium uppercase tracking-wide text-text-muted">Seats</p><div className="mt-1 flex flex-wrap gap-2">{ticket.seats.map((seat) => <span key={seat} className="rounded-md border border-subtle bg-page-muted px-2.5 py-1 text-sm font-semibold">{seat}</span>)}</div></div>
-            </div>
-            <div className="mt-5 flex items-end justify-between gap-3 border-t border-subtle pt-4"><div><p className="text-xs font-medium uppercase tracking-wide text-text-muted">Amount paid</p><p className="mt-1 font-bold">{money(booking.totalAmount)}</p></div><div className="text-right"><p className="text-xs font-medium uppercase tracking-wide text-text-muted">Ticket number</p><p className="mt-1 font-mono text-sm font-semibold">{ticket.ticketNumber}</p></div></div>
-          </div>
-          <div className="ticket-perforation relative border-t border-dashed border-subtle" aria-hidden="true"><span className="ticket-notch ticket-notch-left" /><span className="ticket-notch ticket-notch-right" /></div>
-          <div className="flex flex-col items-center px-5 pb-5 pt-6 sm:px-7 sm:pb-7">
-            <div className="ticket-qr-size relative flex max-w-full items-center justify-center overflow-hidden rounded-lg border border-subtle bg-surface">
-              {!qrLoaded && !qrFailed && <div className="absolute inset-0 animate-pulse bg-page-muted" aria-label="Loading ticket QR code" />}
-              {!qrFailed && <img src={ticket.qrUrl} alt="Ticket QR code" onLoad={() => setQrLoaded(true)} onError={() => setQrFailed(true)} className={`ticket-qr-size object-contain ${qrLoaded ? "" : "opacity-0"}`} />}
-              {qrFailed && <p className="px-4 text-center text-sm text-text-secondary">QR code could not be loaded. Show your ticket number at the theatre.</p>}
-            </div>
-            <p className="mt-4 text-xs text-text-muted">Issued {formatDate(ticket.issuedAt, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true })}</p>
-          </div>
-        </article>
-        <div className="ticket-card-width mt-6 flex w-full flex-col-reverse gap-3 sm:flex-row sm:justify-center"><Button variant="outline" asChild className="sm:min-w-40"><Link to="/">Back to home</Link></Button><Button className="sm:min-w-40" onClick={() => window.print()}>Print ticket</Button></div>
-      </>}
+      {!loading && ticket && booking && <TicketCard booking={booking} ticket={ticket} poster={poster} mode="success" />}
     </main>
   </div>;
 }

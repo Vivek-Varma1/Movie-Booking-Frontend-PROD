@@ -1,10 +1,13 @@
 import { createFileRoute, useRouter, type ErrorComponentProps } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { RotateCcw, Film } from "lucide-react";
-import { movieQuery } from "@/hooks/queries";
+import { movieQuery, moviesQuery } from "@/hooks/queries";
 import { MovieDetails } from "@/components/movie/MovieDetails";
 import { Button } from "@/components/ui/button";
 import { appConfig } from "@/theme/theme";
+import { getSiblings, setPreferredLanguage } from "@/lib/groupMovies";
+import { useCity } from "@/components/city/CityContext";
 
 export const Route = createFileRoute("/movies/$movieId/")({
   loader: async ({ context, params }) => ({ movie: await context.queryClient.ensureQueryData(movieQuery(params.movieId)) }),
@@ -30,7 +33,13 @@ export const Route = createFileRoute("/movies/$movieId/")({
     const { movieId } = Route.useParams();
     const { movie: initialMovie } = Route.useLoaderData();
     const { data: movie } = useSuspenseQuery({ ...movieQuery(movieId), initialData: initialMovie, staleTime: 60_000 });
-    return <MovieDetails key={movie.id} movie={movie} />;
+    const { selectedCity } = useCity();
+    const editionsQuery = useQuery({ ...moviesQuery(selectedCity ? String(selectedCity.cityId) : "", ""), enabled: !!selectedCity });
+    const navigate = Route.useNavigate();
+    const editionsList = editionsQuery.data ?? [];
+    const siblings = getSiblings(editionsList.some((edition) => edition.id === movie.id) ? editionsList : [...editionsList, movie], movie.id);
+    useEffect(() => { if (movie.languages[0]) setPreferredLanguage(movie.languages[0]); }, [movie.id, movie.languages]);
+    return <MovieDetails key={movie.id} movie={movie} editions={siblings} onLanguageSelect={(edition) => void navigate({ to: "/movies/$movieId", params: { movieId: edition.id } })} />;
   },
 });
 

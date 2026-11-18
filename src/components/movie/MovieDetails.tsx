@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { HorizontalScroller } from "./HorizontalScroller";
 import { PosterLightbox, TrailerModal } from "./MovieMediaModal";
 import type { Movie, Trailer } from "@/types";
+import { LanguageSwitcher } from "./LanguageSwitcher";
+import type { MovieEdition } from "@/lib/groupMovies";
 
-export function MovieDetails({ movie }: { movie: Movie }) {
+export function MovieDetails({ movie, editions = [], onLanguageSelect }: { movie: Movie; editions?: MovieEdition[]; onLanguageSelect?: (edition: MovieEdition) => void }) {
   const [trailer, setTrailer] = useState<Trailer | null>(null);
   const [imageIndex, setImageIndex] = useState<number | null>(null);
   const release = new Date(`${movie.releaseDate}T00:00:00`);
@@ -24,6 +26,7 @@ export function MovieDetails({ movie }: { movie: Movie }) {
           <p className="mt-4 flex flex-wrap gap-x-2 text-base text-on-hero/80"><span>{movie.certificate}</span><span aria-hidden="true">|</span><span>{movie.languages.join(", ")}</span><span aria-hidden="true">|</span><span>{duration}</span></p>
           {movie.description && <p className="mt-4 line-clamp-3 max-w-[720px] text-base leading-6 text-on-hero/85">{movie.description}</p>}
           {!!movie.genres.length && <div className="mt-4 flex flex-wrap gap-2">{movie.genres.map((genre) => <span key={genre} className="rounded-full bg-on-hero/15 px-3 py-1 text-xs font-semibold text-on-hero">{genre}</span>)}</div>}
+          <div className="mt-4"><LanguageSwitcher editions={editions} selectedId={movie.id} appearance="dark" onSelect={(edition) => onLanguageSelect?.(edition)} /></div>
           {releaseLabel && <p className="mt-4 text-[13px] text-on-hero/80">Released {releaseLabel}</p>}
           <Button asChild className="mt-5 h-12 w-[171px] rounded-xl bg-on-hero text-hero-dark shadow-none hover:bg-on-hero/90"><Link to="/movies/$movieId/shows" params={{ movieId: movie.id }} search={{ date: "", afterFive: false, availableOnly: false, favouritesOnly: false }}>Book Tickets</Link></Button>
         </div>
