@@ -54,10 +54,12 @@ export function TicketVerifyCard({
   result,
   showCheckIn,
   onCheckedIn,
+  onScanNext,
 }: {
   result: TicketVerificationView;
   showCheckIn: boolean;
   onCheckedIn: (result: TicketVerification) => void;
+  onScanNext?: () => void;
 }) {
   const { isAuthenticated, openAuthModal } = useAuth();
   const navigate = useNavigate();
@@ -90,8 +92,15 @@ export function TicketVerifyCard({
       onCheckedIn(updated);
       toast.success("Ticket checked in");
     } catch (error) {
-      if (error && typeof error === "object" && "response" in error && (error as { response?: { status?: number } }).response?.status === 403) toast.error("You don't have permission to check in tickets");
-      setCheckInError(getErrorMessage(error));
+      if (
+        error &&
+        typeof error === "object" &&
+        "response" in error &&
+        (error as { response?: { status?: number } }).response?.status === 403
+      )
+        toast.error("You don't have permission to check in tickets");
+      const message = getErrorMessage(error);
+      setCheckInError(message);
     } finally {
       setCheckingIn(false);
     }
@@ -158,9 +167,22 @@ export function TicketVerifyCard({
                 {checkInError}
               </p>
             )}
-            <Button className="w-full" disabled={checkingIn} onClick={() => void onCheckIn()}>
-              {checkingIn && <LoaderCircle className="size-4 animate-spin" />}Check in ticket
-            </Button>
+            <div
+              className={checkInError && onScanNext ? "flex flex-col gap-2 sm:flex-row" : undefined}
+            >
+              <Button
+                className={checkInError && onScanNext ? "w-full flex-1" : "w-full"}
+                disabled={checkingIn}
+                onClick={() => void onCheckIn()}
+              >
+                {checkingIn && <LoaderCircle className="size-4 animate-spin" />}Check in ticket
+              </Button>
+              {checkInError && onScanNext && (
+                <Button className="w-full flex-1 sm:w-auto" onClick={onScanNext}>
+                  Scan next ticket
+                </Button>
+              )}
+            </div>
           </>
         )}
         {!isAuthenticated && displayResult.status === "VALID" && (

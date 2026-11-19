@@ -214,6 +214,7 @@ export default function CheckInPage() {
     setLookupError("");
     setInputError("");
     setInput("");
+    lastScannedRef.current.clear();
     if (cameraWasUsedRef.current) {
       cameraWasUsedRef.current = false;
       setCameraRequested(true);
@@ -353,22 +354,34 @@ export default function CheckInPage() {
               <RotateCcw className="size-4" />
               Try again
             </Button>
+            <Button className="ml-2" onClick={scanNext}>
+              <QrCode className="size-4" />
+              Scan next ticket
+            </Button>
           </div>
         )}
         {!loading && result && (
           <div className="space-y-4">
-            <TicketVerifyCard result={result} showCheckIn onCheckedIn={onCheckedIn} />
-            {result.status === "USED" &&
+            <TicketVerifyCard
+              result={result}
+              showCheckIn
+              onCheckedIn={onCheckedIn}
+              onScanNext={scanNext}
+            />
+            {((result.status === "USED" &&
               (result.usedAt ||
                 recent.some(
                   (item) =>
                     item.ticketNumber === result.ticketNumber && item.result === "Checked in",
-                )) && (
-                <Button className="w-full sm:w-auto" onClick={scanNext}>
-                  <QrCode className="size-4" />
-                  Scan next ticket
-                </Button>
-              )}
+                ))) ||
+              result.status === "EXPIRED" ||
+              result.status === "INVALID" ||
+              result.status === "NOT_FOUND") && (
+              <Button className="w-full sm:w-auto" onClick={scanNext}>
+                <QrCode className="size-4" />
+                Scan next ticket
+              </Button>
+            )}
           </div>
         )}
       </section>
