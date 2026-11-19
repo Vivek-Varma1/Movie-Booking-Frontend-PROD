@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as MyBookingsRouteImport } from './routes/my-bookings'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminBookingsRouteImport } from './routes/admin.bookings'
 import { Route as AdminCheckInRouteImport } from './routes/admin.check-in'
 import { Route as AdminCitiesRouteImport } from './routes/admin.cities'
 import { Route as AdminMoviesRouteImport } from './routes/admin.movies'
@@ -46,6 +47,11 @@ const MyBookingsRoute = MyBookingsRouteImport.update({
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBookingsRoute = AdminBookingsRouteImport.update({
+  id: '/bookings',
+  path: '/bookings',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminCheckInRoute = AdminCheckInRouteImport.update({
@@ -124,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/my-bookings': typeof MyBookingsRouteWithChildren
+  '/admin/bookings': typeof AdminBookingsRoute
   '/admin/check-in': typeof AdminCheckInRoute
   '/admin/cities': typeof AdminCitiesRoute
   '/admin/movies': typeof AdminMoviesRoute
@@ -143,6 +150,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/my-bookings': typeof MyBookingsRouteWithChildren
+  '/admin/bookings': typeof AdminBookingsRoute
   '/admin/check-in': typeof AdminCheckInRoute
   '/admin/cities': typeof AdminCitiesRoute
   '/admin/movies': typeof AdminMoviesRoute
@@ -164,6 +172,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/my-bookings': typeof MyBookingsRouteWithChildren
+  '/admin/bookings': typeof AdminBookingsRoute
   '/admin/check-in': typeof AdminCheckInRoute
   '/admin/cities': typeof AdminCitiesRoute
   '/admin/movies': typeof AdminMoviesRoute
@@ -186,6 +195,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/my-bookings'
+    | '/admin/bookings'
     | '/admin/check-in'
     | '/admin/cities'
     | '/admin/movies'
@@ -205,6 +215,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/my-bookings'
+    | '/admin/bookings'
     | '/admin/check-in'
     | '/admin/cities'
     | '/admin/movies'
@@ -225,6 +236,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/my-bookings'
+    | '/admin/bookings'
     | '/admin/check-in'
     | '/admin/cities'
     | '/admin/movies'
@@ -282,6 +294,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/bookings': {
+      id: '/admin/bookings'
+      path: '/bookings'
+      fullPath: '/admin/bookings'
+      preLoaderRoute: typeof AdminBookingsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/check-in': {
@@ -386,6 +405,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminBookingsRoute: typeof AdminBookingsRoute
   AdminCheckInRoute: typeof AdminCheckInRoute
   AdminCitiesRoute: typeof AdminCitiesRoute
   AdminMoviesRoute: typeof AdminMoviesRoute
@@ -397,6 +417,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminBookingsRoute: AdminBookingsRoute,
   AdminCheckInRoute: AdminCheckInRoute,
   AdminCitiesRoute: AdminCitiesRoute,
   AdminMoviesRoute: AdminMoviesRoute,

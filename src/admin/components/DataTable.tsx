@@ -1,22 +1,359 @@
-import { useState, type ReactNode } from 'react';
-import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight, MoreHorizontal, Search, Inbox } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-export interface Column<T> {id: string; header: string; accessor: (row: T) => string | number; render?: (row: T) => ReactNode; sortable?: boolean}
-export function tablePage<T>(rows: T[], query: string, columns: Column<T>[], sort: {id: string; desc: boolean} | null, page: number) {
-  let result = rows.filter(row => columns.some(col => String(col.accessor(row)).toLowerCase().includes(query.toLowerCase())));
-  const column = columns.find(col => col.id === sort?.id);
-  if (column && sort) result = [...result].sort((a,b) => {const x = column.accessor(a), y = column.accessor(b); return (typeof x === 'number' && typeof y === 'number' ? x-y : String(x).localeCompare(String(y))) * (sort.desc ? -1 : 1);});
+import { useState, type ReactNode } from "react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
+  MoreHorizontal,
+  Search,
+  Inbox,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+export interface Column<T> {
+  id: string;
+  header: string;
+  accessor: (row: T) => string | number;
+  render?: (row: T) => ReactNode;
+  sortable?: boolean;
+}
+export interface ServerPagination {
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange?: (size: number) => void;
+}
+
+export function tablePage<T>(
+  rows: T[],
+  query: string,
+  columns: Column<T>[],
+  sort: { id: string; desc: boolean } | null,
+  page: number,
+) {
+  let result = rows.filter((row) =>
+    columns.some((column) =>
+      String(column.accessor(row)).toLowerCase().includes(query.toLowerCase()),
+    ),
+  );
+  const column = columns.find((item) => item.id === sort?.id);
+  if (column && sort) {
+    result = [...result].sort((left, right) => {
+      const first = column.accessor(left);
+      const second = column.accessor(right);
+      const comparison =
+        typeof first === "number" && typeof second === "number"
+          ? first - second
+          : String(first).localeCompare(String(second));
+      return comparison * (sort.desc ? -1 : 1);
+    });
+  }
   const pages = Math.max(1, Math.ceil(result.length / 10));
   const current = Math.min(page, pages - 1);
-  return {rows: result.slice(current*10,current*10+10), total: result.length, pages, current};
+  return {
+    rows: result.slice(current * 10, current * 10 + 10),
+    total: result.length,
+    pages,
+    current,
+  };
 }
-export function DataTable<T>({rows, columns, rowKey, loading, filterSlot, emptyAction, actions, emptyTitle='No records yet', emptyIcon, onRowClick, searchColumns, initialSort, rowClassName, error, onRetry}: {onRowClick?: (row:T)=>void; searchColumns?: Column<T>[]; rows: T[]; columns: Column<T>[]; rowKey: (row:T)=>string|number; loading?: boolean; filterSlot?: ReactNode; emptyAction?: ReactNode; emptyTitle?: string; emptyIcon?: ReactNode; actions?: (row:T)=>{label:string; onSelect:()=>void; destructive?:boolean}[]; initialSort?: {id:string;desc:boolean}; rowClassName?: (row:T)=>string|undefined; error?: string|undefined; onRetry?:(()=>void)|undefined}) {
-  const [query,setQuery] = useState(''); const [page,setPage] = useState(0); const [sort,setSort] = useState<{id:string;desc:boolean}|null>(initialSort??null);
-  const filtered = searchColumns ? rows.filter(row => searchColumns.some(col=>String(col.accessor(row)).toLowerCase().includes(query.toLowerCase()))) : rows;
-  const data = tablePage(filtered,searchColumns ? '' : query,columns,sort,page);
-  return <div className="overflow-hidden rounded-lg border border-subtle bg-surface"><div className="flex flex-wrap items-center gap-3 border-b border-subtle p-4"><div className="relative w-full sm:max-w-xs"><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-muted"/><Input aria-label="Search records" placeholder="Search…" className="pl-9" value={query} onChange={e=>{setQuery(e.target.value);setPage(0);}}/></div>{filterSlot}</div>{error&&<div role="alert" className="border-b border-subtle bg-danger/10 px-4 py-3 text-sm text-danger">{error}{onRetry&&<Button variant="link" size="sm" className="ml-2" onClick={onRetry}>Retry</Button>}</div>}<Table><TableHeader><TableRow>{columns.map(col=><TableHead key={col.id}>{col.sortable === false ? col.header : <Button variant="ghost" className="h-9 px-0 text-xs font-semibold text-text-secondary hover:bg-transparent" onClick={()=>{setSort({id:col.id,desc:sort?.id===col.id ? !sort.desc : false});setPage(0);}}>{col.header}{sort?.id===col.id ? sort.desc ? <ArrowDown className="size-3"/> : <ArrowUp className="size-3"/> : <ArrowUpDown className="size-3"/>}</Button>}</TableHead>)}{actions && <TableHead className="w-12"><span className="sr-only">Actions</span></TableHead>}</TableRow></TableHeader><TableBody>{loading ? Array.from({length:5},(_,i)=><TableRow key={i}>{columns.map(col=><TableCell key={col.id}><Skeleton className="h-5 w-24"/></TableCell>)}</TableRow>) : data.rows.map(row=><TableRow key={rowKey(row)} className={`${onRowClick ? 'cursor-pointer' : ''} ${rowClassName?.(row)??''}`} onClick={()=>onRowClick?.(row)}>{columns.map(col=><TableCell key={col.id}>{col.render ? col.render(row) : col.accessor(row)}</TableCell>)}{actions && <TableCell onClick={e=>e.stopPropagation()}><DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label="Row actions"><MoreHorizontal className="size-4"/></Button></DropdownMenuTrigger><DropdownMenuContent align="end">{actions(row).map(action=><DropdownMenuItem key={action.label} onSelect={action.onSelect} className={action.destructive ? 'text-danger' : ''}>{action.label}</DropdownMenuItem>)}</DropdownMenuContent></DropdownMenu></TableCell>}</TableRow>)}</TableBody></Table>{!loading && data.total===0 && <div className="flex min-h-64 flex-col items-center justify-center gap-4 p-6 text-center">{error?<p role="status" className="font-semibold">Could not load records</p>:<>{emptyIcon ?? <Inbox className="size-9 text-text-muted"/>}<p className="font-semibold">{query ? 'No matching records' : emptyTitle}</p>{query ? <Button variant="outline" onClick={()=>setQuery('')}>Clear search</Button> : emptyAction}</>}</div>}<div className="flex items-center justify-between gap-2 border-t border-subtle px-4 py-3 text-xs text-text-secondary"><span>{data.total} records · Page {data.current+1} of {data.pages}</span><div className="flex gap-1"><Button variant="outline" size="icon" aria-label="Previous page" disabled={data.current===0} onClick={()=>setPage(data.current-1)}><ChevronLeft className="size-4"/></Button><Button variant="outline" size="icon" aria-label="Next page" disabled={data.current+1>=data.pages} onClick={()=>setPage(data.current+1)}><ChevronRight className="size-4"/></Button></div></div></div>;
+
+export function DataTable<T>({
+  rows,
+  columns,
+  rowKey,
+  loading,
+  filterSlot,
+  emptyAction,
+  actions,
+  emptyTitle = "No records yet",
+  emptyIcon,
+  onRowClick,
+  searchColumns,
+  initialSort,
+  rowClassName,
+  error,
+  onRetry,
+  hideSearch,
+  serverPagination,
+}: {
+  onRowClick?: (row: T) => void;
+  searchColumns?: Column<T>[];
+  rows: T[];
+  columns: Column<T>[];
+  rowKey: (row: T) => string | number;
+  loading?: boolean;
+  filterSlot?: ReactNode;
+  emptyAction?: ReactNode;
+  emptyTitle?: string;
+  emptyIcon?: ReactNode;
+  actions?: (row: T) => { label: string; onSelect: () => void; destructive?: boolean }[];
+  initialSort?: { id: string; desc: boolean };
+  rowClassName?: (row: T) => string | undefined;
+  error?: string | undefined;
+  onRetry?: () => void;
+  hideSearch?: boolean;
+  serverPagination?: ServerPagination;
+}) {
+  const [query, setQuery] = useState("");
+  const [page, setPage] = useState(0);
+  const [sort, setSort] = useState<{ id: string; desc: boolean } | null>(initialSort ?? null);
+  const filtered = searchColumns
+    ? rows.filter((row) =>
+        searchColumns.some((column) =>
+          String(column.accessor(row)).toLowerCase().includes(query.toLowerCase()),
+        ),
+      )
+    : rows;
+  const localPage = tablePage(filtered, searchColumns ? "" : query, columns, sort, page);
+  const data = serverPagination
+    ? {
+        rows,
+        total: serverPagination.totalItems,
+        pages: Math.max(1, serverPagination.totalPages),
+        current: serverPagination.page,
+      }
+    : localPage;
+
+  return (
+    <div className="overflow-hidden rounded-lg border border-subtle bg-surface">
+      {(!hideSearch || filterSlot) && (
+        <div className="flex flex-wrap items-center gap-3 border-b border-subtle p-4">
+          {!hideSearch && (
+            <div className="relative w-full sm:max-w-xs">
+              <Search className="absolute left-3 top-3 size-4 -translate-y-1/2 text-text-muted" />
+              <Input
+                aria-label="Search records"
+                placeholder="Search…"
+                className="pl-9"
+                value={query}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setPage(0);
+                }}
+              />
+            </div>
+          )}
+          {filterSlot}
+        </div>
+      )}
+      {error && (
+        <div
+          role="alert"
+          className="border-b border-subtle bg-danger/10 px-4 py-3 text-sm text-danger"
+        >
+          {error}
+          {onRetry && (
+            <Button variant="link" size="sm" className="ml-2" onClick={onRetry}>
+              Retry
+            </Button>
+          )}
+        </div>
+      )}
+      <Table>
+        <TableHeader>
+          <TableRow>
+            {columns.map((column) => (
+              <TableHead key={column.id}>
+                {column.sortable === false ? (
+                  column.header
+                ) : (
+                  <Button
+                    variant="ghost"
+                    className="h-9 px-0 text-xs font-semibold text-text-secondary hover:bg-transparent"
+                    onClick={() => {
+                      setSort({ id: column.id, desc: sort?.id === column.id ? !sort.desc : false });
+                      setPage(0);
+                    }}
+                  >
+                    {column.header}
+                    {sort?.id === column.id ? (
+                      sort.desc ? (
+                        <ArrowDown className="size-3" />
+                      ) : (
+                        <ArrowUp className="size-3" />
+                      )
+                    ) : (
+                      <ArrowUpDown className="size-3" />
+                    )}
+                  </Button>
+                )}
+              </TableHead>
+            ))}
+            {actions && (
+              <TableHead className="w-12">
+                <span className="sr-only">Actions</span>
+              </TableHead>
+            )}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {loading
+            ? Array.from({ length: 5 }, (_, index) => (
+                <TableRow key={index}>
+                  {columns.map((column) => (
+                    <TableCell key={column.id}>
+                      <Skeleton className="h-5 w-24" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            : data.rows.map((row) => (
+                <TableRow
+                  key={rowKey(row)}
+                  tabIndex={onRowClick ? 0 : undefined}
+                  className={`${onRowClick ? "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent" : ""} ${rowClassName?.(row) ?? ""}`}
+                  onClick={() => onRowClick?.(row)}
+                  onKeyDown={(event) => {
+                    if (onRowClick && (event.key === "Enter" || event.key === " ")) {
+                      event.preventDefault();
+                      onRowClick(row);
+                    }
+                  }}
+                >
+                  {columns.map((column) => (
+                    <TableCell key={column.id}>
+                      {column.render ? column.render(row) : column.accessor(row)}
+                    </TableCell>
+                  ))}
+                  {actions && (
+                    <TableCell onClick={(event) => event.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" aria-label="Row actions">
+                            <MoreHorizontal className="size-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {actions(row).map((action) => (
+                            <DropdownMenuItem
+                              key={action.label}
+                              onSelect={action.onSelect}
+                              className={action.destructive ? "text-danger" : ""}
+                            >
+                              {action.label}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+        </TableBody>
+      </Table>
+      {!loading && data.total === 0 && (
+        <div className="flex min-h-64 flex-col items-center justify-center gap-4 p-6 text-center">
+          {error ? (
+            <p role="status" className="font-semibold">
+              Could not load records
+            </p>
+          ) : (
+            <>
+              {emptyIcon ?? <Inbox className="size-9 text-text-muted" />}
+              <p className="font-semibold">{query ? "No matching records" : emptyTitle}</p>
+              {query ? (
+                <Button variant="outline" onClick={() => setQuery("")}>
+                  Clear search
+                </Button>
+              ) : (
+                emptyAction
+              )}
+            </>
+          )}
+        </div>
+      )}
+      {serverPagination ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-subtle px-4 py-3 text-sm text-text-secondary">
+          <span>
+            {data.total === 0
+              ? "Showing 0 of 0"
+              : `Showing ${data.current * serverPagination.pageSize + 1}-${Math.min((data.current + 1) * serverPagination.pageSize, data.total)} of ${data.total}`}
+          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-2 text-xs">
+              <span>Rows</span>
+              <select
+                aria-label="Rows per page"
+                className="h-9 rounded-md border border-subtle bg-surface px-2 text-text-primary"
+                value={serverPagination.pageSize}
+                onChange={(event) =>
+                  serverPagination.onPageSizeChange?.(Number(event.target.value))
+                }
+              >
+                {[20, 50].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={data.current === 0}
+              onClick={() => serverPagination.onPageChange(data.current - 1)}
+            >
+              <ChevronLeft className="size-4" />
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={data.current + 1 >= data.pages}
+              onClick={() => serverPagination.onPageChange(data.current + 1)}
+            >
+              Next
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between gap-2 border-t border-subtle px-4 py-3 text-xs text-text-secondary">
+          <span>
+            {data.total} records · Page {data.current + 1} of {data.pages}
+          </span>
+          <div className="flex gap-1">
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Previous page"
+              disabled={data.current === 0}
+              onClick={() => setPage(data.current - 1)}
+            >
+              <ChevronLeft className="size-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Next page"
+              disabled={data.current + 1 >= data.pages}
+              onClick={() => setPage(data.current + 1)}
+            >
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
